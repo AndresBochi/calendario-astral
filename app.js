@@ -38,7 +38,7 @@ const T = {
     planets: "Planetas",
     footnote: "Zodíaco tropical · posiciones geocéntricas calculadas en el dispositivo, para el día elegido a la hora actual.",
     ascending: "Asciende ↑", descending: "Desciende ↓",
-    until: "hasta el",
+    until: "hasta el", movingNorth: "va hacia el norte", movingSouth: "va hacia el sur",
     toPerigee: "Hacia el perigeo", toApogee: "Hacia el apogeo",
     untilApsis: (n, hours, perigee) =>
       `${n === 1 ? "falta" : "faltan"} ${n} ${hours ? "h" : n === 1 ? "día" : "días"} ` +
@@ -61,7 +61,7 @@ const T = {
     planets: "Planets",
     footnote: "Tropical zodiac · geocentric positions computed on-device, for the selected day at the current time.",
     ascending: "Ascending ↑", descending: "Descending ↓",
-    until: "until",
+    until: "until", movingNorth: "moving north", movingSouth: "moving south",
     toPerigee: "Heading to perigee", toApogee: "Heading to apogee",
     untilApsis: (n, hours, perigee) =>
       `${n} ${hours ? "h" : n === 1 ? "day" : "days"} to ${perigee ? "perigee" : "apogee"}`,
@@ -223,14 +223,18 @@ function lunarArc(date) {
   const prev = culmination(date, -1);
   let cur = culmination(date, +1);
   const ascending = cur.hor.altitude > prev.hor.altitude;
+  // North/south motion, from declination at consecutive culminations, so the
+  // daily parallax wobble at the observer's spot cancels out.
+  const dec = (event) => A.Equator("Moon", event.time, obs, true, true).dec;
+  const movingNorth = dec(cur) > dec(prev);
   for (let i = 0; i < 20; i++) {
     const next = culmination(cur.time.AddDays(0.5), +1);
     if (ascending ? next.hor.altitude < cur.hor.altitude : next.hor.altitude > cur.hor.altitude) {
-      return { ascending, end: cur.time.date };
+      return { ascending, movingNorth, end: cur.time.date };
     }
     cur = next;
   }
-  return { ascending, end: null };
+  return { ascending, movingNorth, end: null };
 }
 
 /* Rise and set times during the given local day; null when the event
@@ -364,7 +368,8 @@ function renderSky(date) {
         { weekday: "long", day: "numeric", month: "long" }).replace(",", "")}`
       : "";
     $("moonAscent").innerHTML =
-      `${arc.ascending ? t("ascending") : t("descending")}<small>${until}</small>`;
+      `${arc.ascending ? t("ascending") : t("descending")}<small>${until}</small>` +
+      `<small>${arc.movingNorth ? t("movingNorth") : t("movingSouth")}</small>`;
   }
 
   // Moon: anomalistic — is the next apsis a perigee or an apogee?
