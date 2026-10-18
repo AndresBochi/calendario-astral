@@ -393,16 +393,16 @@ function renderClock(now) {
 }
 
 function renderLocation() {
-  const tz = state.tz;
   const el = $("location");
   if (state.lat !== null) {
     const ns = state.lat >= 0 ? "N" : "S";
     const ew = state.lon >= 0 ? "E" : "W";
     const coords = `${Math.abs(state.lat).toFixed(2)}° ${ns}, ${Math.abs(state.lon).toFixed(2)}° ${ew}`;
-    // One line each: coordinates, town/province/country, time zone.
-    el.replaceChildren(...[coords, state.place, tz].filter(Boolean).map((text) => {
+    // One line each: coordinates, town/province/country.
+    el.replaceChildren(...[coords, state.place].filter(Boolean).map((text) => {
       const line = document.createElement("div");
       line.textContent = text;
+      if (text === state.place) line.className = "place";
       return line;
     }));
     el.append(locPanelButton("loc-link", t("changeLocation")));
@@ -413,7 +413,24 @@ function renderLocation() {
       locPanelButton("loc-btn", t("chooseLocation")));
   }
   renderLocHelp();
+  fitPlace();
 }
+
+// Keep "town, province, country" on one line: beside the date when it fits,
+// otherwise below it across the full width, and wrap only if even that is too narrow.
+function fitPlace() {
+  const today = document.querySelector(".today");
+  const line = $("location").querySelector(".place");
+  today.classList.remove("loc-wide");
+  if (!line) return;
+  line.classList.remove("wrap");
+  const overflowing = () => line.scrollWidth > line.clientWidth + 1;
+  if (overflowing()) today.classList.add("loc-wide");
+  if (overflowing()) line.classList.add("wrap");
+}
+
+window.addEventListener("resize", fitPlace);
+document.fonts?.ready.then(fitPlace);
 
 function locPanelButton(className, label) {
   const b = document.createElement("button");

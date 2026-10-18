@@ -134,15 +134,20 @@ button { font: inherit; color: inherit; }
 .chip[hidden] { display: none; }
 
 /* selected day block */
+/* Location sits under the clock, beside the date. When the place name can't fit
+   on one line there, .loc-wide moves it below, across the full width. */
 .today {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas: "date time" "date loc";
+  align-items: end;
+  column-gap: 12px;
   padding: 16px 18px 14px;
   border-bottom: 1px dashed var(--line);
 }
-.today-date { position: relative; }
+.today.loc-wide { grid-template-areas: "date time" "loc loc"; }
+.today.loc-wide .loc { margin-top: 10px; }
+.today-date { grid-area: date; position: relative; }
 .weekday {
   text-transform: capitalize;
   font-weight: 600;
@@ -178,7 +183,7 @@ button { font: inherit; color: inherit; }
   pointer-events: none;
 }
 
-.today-time { text-align: right; }
+.today-time { grid-area: time; text-align: right; }
 .label {
   font-size: .7rem;
   text-transform: uppercase;
@@ -191,7 +196,16 @@ button { font: inherit; color: inherit; }
   font-size: 2rem;
   font-variant-numeric: tabular-nums;
 }
-.loc { font-size: .75rem; color: var(--ink-soft); max-width: 180px; margin-left: auto; }
+.loc {
+  grid-area: loc;
+  align-self: start;
+  min-width: 0;
+  text-align: right;
+  font-size: .75rem;
+  color: var(--ink-soft);
+}
+.loc .place { white-space: nowrap; }
+.loc .place.wrap { white-space: normal; }
 .loc-btn {
   display: inline-block;
   margin-top: 6px;
