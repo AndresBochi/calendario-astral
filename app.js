@@ -405,7 +405,7 @@ function renderLocation() {
       if (text === state.place) line.className = "place";
       return line;
     }));
-    el.append(locPanelButton("loc-link", t("changeLocation")));
+    el.append(locPanelButton("loc-btn", t("changeLocation")));
   } else if (state.locStatus === "locating") {
     el.textContent = t("locating");
   } else {

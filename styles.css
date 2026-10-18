@@ -219,18 +219,6 @@ button { font: inherit; color: inherit; }
   cursor: pointer;
 }
 
-.loc-link {
-  display: inline-block;
-  margin-top: 4px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--accent);
-  font-size: .75rem;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
 /* location panel: GPS, help, city search */
 .loc-panel {
   display: grid;
