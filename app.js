@@ -319,7 +319,12 @@ function renderLocation() {
     const ns = state.lat >= 0 ? "N" : "S";
     const ew = state.lon >= 0 ? "E" : "W";
     const coords = `${Math.abs(state.lat).toFixed(2)}° ${ns}, ${Math.abs(state.lon).toFixed(2)}° ${ew}`;
-    el.textContent = [coords, state.place, tz].filter(Boolean).join(" · ");
+    // One line each: coordinates, town/province/country, time zone.
+    el.replaceChildren(...[coords, state.place, tz].filter(Boolean).map((text) => {
+      const line = document.createElement("div");
+      line.textContent = text;
+      return line;
+    }));
     return;
   }
   if (state.locStatus === "locating") {
@@ -671,7 +676,7 @@ async function lookupPlace() {
   const { lat, lon, lang } = state;
   let cached = null;
   try {
-    cached = JSON.parse(store.get("place"));
+    cached = JSON.parse(store.get("place2"));
   } catch {}
   const km = cached
     ? Math.hypot(cached.lat - lat, (cached.lon - lon) * Math.cos(lat * Math.PI / 180)) * 111
@@ -688,12 +693,12 @@ async function lookupPlace() {
     if (!res.ok) return;
     const a = (await res.json()).address || {};
     const town = a.city || a.town || a.village || a.municipality || a.hamlet || a.county || "";
-    // "Bragado, Buenos Aires"; skip the region when it repeats the town (CABA).
+    // "Bragado, Buenos Aires, Argentina"; skip the region when it repeats the town (CABA).
     const region = a.state && !a.state.includes(town) ? a.state : "";
-    const name = [town, region].filter(Boolean).join(", ");
+    const name = [town, region, a.country].filter(Boolean).join(", ");
     if (!name) return;
     state.place = name;
-    store.set("place", JSON.stringify({ lat, lon, lang, name }));
+    store.set("place2", JSON.stringify({ lat, lon, lang, name }));
     renderLocation();
   } catch {
     // Offline or blocked: the line keeps coordinates and time zone.

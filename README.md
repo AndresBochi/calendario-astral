@@ -46,7 +46,7 @@ then open http://localhost:8080.
 - Calculations run on-device with [astronomy-engine](https://github.com/cosinekitty/astronomy)
   (MIT, vendored in `vendor/`), so no internet connection is needed. Only the web fonts
   load from the internet, and the app falls back to system fonts without them.
-- The town name in the location line (e.g. "Bragado, Buenos Aires") comes from
+- The town name in the location line (e.g. "Bragado, Buenos Aires, Argentina") comes from
   OpenStreetMap's Nominatim service, which needs internet and receives the coordinates.
   It's cached on the device and looked up again only after moving about 2 km.
 - Zodiac is tropical (ecliptic of date), with geocentric positions.
