@@ -49,8 +49,19 @@ const T = {
     moonrise: "Salida de la luna", moonset: "Puesta de la luna",
     noEvent: "no ocurre este día", needsLocation: "requiere ubicación",
     locating: "Buscando ubicación…", noLocation: "Ubicación no disponible",
-    locDenied: "Ubicación bloqueada: permítela desde el icono junto a la dirección",
-    useLocation: "Activar ubicación", retry: "Reintentar",
+    locTitle: "Tu ubicación", useLocation: "Usar mi ubicación (GPS)",
+    chooseLocation: "Elegir ubicación", changeLocation: "Cambiar ubicación",
+    searchCity: "O busca tu ciudad", cityPlaceholder: "Ej.: Bragado", search: "Buscar",
+    searching: "Buscando…", noResults: "No se encontraron lugares",
+    searchFailed: "No se pudo buscar. Revisa la conexión a internet.",
+    helpIosSafari: "La ubicación está bloqueada en el iPhone. Ve a Ajustes › Privacidad y seguridad › " +
+      "Localización, actívala y en «Sitios web de Safari» elige «Cuando se use la app». " +
+      "Luego recarga esta página. También puedes buscar tu ciudad abajo.",
+    helpIosChrome: "La ubicación está bloqueada en el iPhone. Ve a Ajustes › Privacidad y seguridad › " +
+      "Localización, actívala y en «Chrome» elige «Cuando se use la app». " +
+      "Luego recarga esta página. También puedes buscar tu ciudad abajo.",
+    helpOther: "La ubicación está bloqueada. Permítela desde el icono junto a la dirección y " +
+      "recarga la página, o busca tu ciudad abajo.",
     themeDark: "Tema oscuro", themeLight: "Tema claro",
   },
   en: {
@@ -70,8 +81,19 @@ const T = {
     moonrise: "Moonrise", moonset: "Moonset",
     noEvent: "none this day", needsLocation: "needs location",
     locating: "Locating…", noLocation: "Location unavailable",
-    locDenied: "Location blocked: allow it from the icon next to the address bar",
-    useLocation: "Use my location", retry: "Retry",
+    locTitle: "Your location", useLocation: "Use my location (GPS)",
+    chooseLocation: "Set location", changeLocation: "Change location",
+    searchCity: "Or search for your city", cityPlaceholder: "e.g. Bragado", search: "Search",
+    searching: "Searching…", noResults: "No places found",
+    searchFailed: "Couldn't search. Check your internet connection.",
+    helpIosSafari: "Location is blocked on this iPhone. Go to Settings › Privacy & Security › " +
+      "Location Services, turn it on, and set “Safari Websites” to “While Using the App”. " +
+      "Then reload this page. You can also search for your city below.",
+    helpIosChrome: "Location is blocked on this iPhone. Go to Settings › Privacy & Security › " +
+      "Location Services, turn it on, and set “Chrome” to “While Using the App”. " +
+      "Then reload this page. You can also search for your city below.",
+    helpOther: "Location is blocked. Allow it from the icon next to the address bar and reload " +
+      "the page, or search for your city below.",
     themeDark: "Dark theme", themeLight: "Light theme",
   },
 };
@@ -294,6 +316,7 @@ function renderStatic() {
   $("themeBtn").title = dark ? t("themeLight") : t("themeDark");
   $("todayBtn").hidden = sameDay(state.selected, new Date());
   document.querySelector('meta[name="theme-color"]').content = dark ? "#7b6cf0" : "#b23a2e";
+  $("cityInput").placeholder = t("cityPlaceholder");
 }
 
 function renderDate() {
@@ -325,16 +348,37 @@ function renderLocation() {
       line.textContent = text;
       return line;
     }));
-    return;
-  }
-  if (state.locStatus === "locating") {
+    el.append(locPanelButton("loc-link", t("changeLocation")));
+  } else if (state.locStatus === "locating") {
     el.textContent = t("locating");
-    return;
+  } else {
+    el.replaceChildren(t("noLocation"), document.createElement("br"),
+      locPanelButton("loc-btn", t("chooseLocation")));
   }
-  const denied = state.locStatus === "denied";
-  el.innerHTML = `<span>${denied ? t("locDenied") : t("noLocation")}</span>
-    <button type="button" class="loc-btn" id="locBtn">${denied ? t("retry") : t("useLocation")}</button>`;
-  $("locBtn").addEventListener("click", locate);
+  renderLocHelp();
+}
+
+function locPanelButton(className, label) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = className;
+  b.textContent = label;
+  b.addEventListener("click", () => openLocPanel());
+  return b;
+}
+
+// When the browser refused location, explain how to turn it on for this device.
+function renderLocHelp() {
+  const help = $("locHelp");
+  help.hidden = state.locStatus !== "denied";
+  const ua = navigator.userAgent;
+  const ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  help.textContent = !ios ? t("helpOther") : /CriOS/.test(ua) ? t("helpIosChrome") : t("helpIosSafari");
+}
+
+function openLocPanel() {
+  $("locPanel").hidden = false;
+  renderLocHelp();
 }
 
 function renderSky(date) {
@@ -656,13 +700,16 @@ function locate() {
       state.lon = pos.coords.longitude;
       state.locStatus = "ok";
       store.set("loc", JSON.stringify({ lat: state.lat, lon: state.lon }));
+      $("locPanel").hidden = true;
       lookupPlace();
       renderAll();
     },
     (err) => {
-      // Keep a saved location if there is one; otherwise offer to try again.
+      // Keep a saved location if there is one; otherwise open the panel with
+      // instructions and the city search.
       state.locStatus = err.code === err.PERMISSION_DENIED ? "denied" : "unavailable";
       renderLocation();
+      if (state.lat === null) openLocPanel();
     },
     { enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 },
   );
@@ -691,11 +738,7 @@ async function lookupPlace() {
     const res = await fetch("https://nominatim.openstreetmap.org/reverse?format=jsonv2" +
       `&lat=${lat}&lon=${lon}&zoom=10&accept-language=${lang}`);
     if (!res.ok) return;
-    const a = (await res.json()).address || {};
-    const town = a.city || a.town || a.village || a.municipality || a.hamlet || a.county || "";
-    // "Bragado, Buenos Aires, Argentina"; skip the region when it repeats the town (CABA).
-    const region = a.state && !a.state.includes(town) ? a.state : "";
-    const name = [town, region, a.country].filter(Boolean).join(", ");
+    const name = placeName((await res.json()).address);
     if (!name) return;
     state.place = name;
     store.set("place2", JSON.stringify({ lat, lon, lang, name }));
@@ -705,9 +748,74 @@ async function lookupPlace() {
   }
 }
 
+// "Bragado, Buenos Aires, Argentina"; skips the region when it repeats the town (CABA).
+function placeName(a = {}) {
+  const town = a.city || a.town || a.village || a.municipality || a.hamlet || a.county || "";
+  const region = a.state && !a.state.includes(town) ? a.state : "";
+  return [town, region, a.country].filter(Boolean).join(", ");
+}
+
+/* ---------- location panel: GPS or city search ---------- */
+
+function setManualLocation(lat, lon, name) {
+  state.lat = lat;
+  state.lon = lon;
+  state.locStatus = "manual";
+  state.place = name;
+  store.set("loc", JSON.stringify({ lat, lon, manual: true }));
+  store.set("place2", JSON.stringify({ lat, lon, lang: state.lang, name }));
+  $("locPanel").hidden = true;
+  $("cityResults").replaceChildren();
+  $("cityInput").value = "";
+  renderAll();
+}
+
+function showCityMessage(text) {
+  const li = document.createElement("li");
+  li.className = "muted";
+  li.textContent = text;
+  $("cityResults").replaceChildren(li);
+}
+
+// Search runs on submit only (no search-as-you-type), per OpenStreetMap's usage policy.
+$("citySearch").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const q = $("cityInput").value.trim();
+  if (!q) return;
+  showCityMessage(t("searching"));
+  try {
+    const res = await fetch("https://nominatim.openstreetmap.org/search?format=jsonv2" +
+      `&addressdetails=1&limit=6&accept-language=${state.lang}&q=${encodeURIComponent(q)}`);
+    const results = res.ok ? await res.json() : [];
+    if (!results.length) {
+      showCityMessage(t("noResults"));
+      return;
+    }
+    $("cityResults").replaceChildren(...results.map((r) => {
+      const name = placeName(r.address) || r.display_name;
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = name;
+      b.addEventListener("click", () => setManualLocation(Number(r.lat), Number(r.lon), name));
+      const li = document.createElement("li");
+      li.append(b);
+      return li;
+    }));
+  } catch {
+    showCityMessage(t("searchFailed"));
+  }
+});
+
+$("gpsBtn").addEventListener("click", locate);
+$("locClose").addEventListener("click", () => {
+  $("locPanel").hidden = true;
+});
+
 renderAll();
 lookupPlace();
-locate();
+// A city picked by hand stays until the person asks for GPS again.
+if (savedLoc?.manual) state.locStatus = "manual";
+else locate();
 
 let lastMinute = new Date().getMinutes();
 let lastDay = new Date();

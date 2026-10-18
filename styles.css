@@ -205,6 +205,91 @@ button { font: inherit; color: inherit; }
   cursor: pointer;
 }
 
+.loc-link {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: .75rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* location panel: GPS, help, city search */
+.loc-panel {
+  display: grid;
+  gap: 10px;
+  padding: 14px 18px 16px;
+  background: var(--paper-2);
+  border-bottom: 1px dashed var(--line);
+}
+.loc-panel[hidden] { display: none; }
+.loc-panel .loc-btn { margin-top: 0; justify-self: start; font-size: .8rem; padding: 6px 14px; }
+.loc-panel-head { display: flex; align-items: center; justify-content: space-between; }
+.loc-panel h3 {
+  margin: 0;
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+.loc-close {
+  width: 32px; height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.loc-close:hover { color: var(--ink); }
+.loc-help {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  font-size: .82rem;
+  line-height: 1.45;
+}
+.loc-help[hidden] { display: none; }
+.city-search { display: grid; gap: 6px; }
+.city-search label { font-size: .82rem; color: var(--ink-soft); }
+.city-row { display: flex; gap: 8px; }
+.city-row input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px; /* 16px keeps iPhone Safari from zooming in on focus */
+}
+.city-row input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.city-results { list-style: none; margin: 0; padding: 0; }
+.city-results:empty { display: none; }
+.city-results li { border-bottom: 1px dotted var(--line); }
+.city-results li:last-child { border-bottom: 0; }
+.city-results button {
+  width: 100%;
+  padding: 9px 2px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  text-align: left;
+  font-size: .85rem;
+  cursor: pointer;
+}
+.city-results button:hover { color: var(--accent); }
+.city-results .muted { padding: 8px 2px; font-size: .82rem; color: var(--ink-soft); }
+
 /* scrollable day strip */
 .days {
   position: relative;

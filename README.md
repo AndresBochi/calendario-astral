@@ -51,8 +51,10 @@ then open http://localhost:8080.
   It's cached on the device and looked up again only after moving about 2 km.
 - Zodiac is tropical (ecliptic of date), with geocentric positions.
 - Your location is needed for rise/set times and ascending/descending. The last known
-  location is remembered on the device; if location is off, the page offers a button to turn
-  it on. Without it, the time zone only decides which side of the moon icons is lit.
+  location is remembered on the device. If the browser refuses location (common on iPhone,
+  where Safari/Chrome website location is switched off in iOS Settings and the page is never
+  asked), a panel explains how to turn it on for that device and offers a city search
+  (OpenStreetMap) instead. A city picked by hand stays until "Use my location (GPS)" is tapped. Without it, the time zone only decides which side of the moon icons is lit.
 
 ## Next step: Android
 
