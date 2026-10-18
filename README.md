@@ -37,8 +37,7 @@ then open http://localhost:8080.
 - **Moon**: phase name + % illuminated, sign and degree, moonrise/moonset, ascending/descending in the
   biodynamic sense for your hemisphere (ascending = its daily arc is getting higher, like the
   Sun between the winter and summer solstices), plus its north/south motion, declination and
-  peak altitude that day; its solar-year equivalent (the date the Sun stands where the Moon is
-  now, and that season where you are); heading to perigee or apogee, current distance
+  peak altitude that day; heading to perigee or apogee, current distance
 - **Planets** (compact): sign, degree, ℞ when retrograde
 - Light/dark theme toggle and ES/EN toggle (both remembered)
 
@@ -48,7 +47,7 @@ then open http://localhost:8080.
   (MIT, vendored in `vendor/`), so no internet connection is needed. Only the web fonts
   load from the internet, and the app falls back to system fonts without them.
 - Zodiac is tropical (ecliptic of date), with geocentric positions.
-- Location is used for rise/set times, the hemisphere (ascending/descending, seasons, moon icon
+- Location is used for rise/set times, the hemisphere (ascending/descending, moon icon
   orientation) and the displayed coordinates. Without it, the hemisphere is guessed from the
   device time zone.
 

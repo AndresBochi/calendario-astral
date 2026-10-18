@@ -40,10 +40,7 @@ const T = {
     ascending: "Asciende ↑", descending: "Desciende ↓",
     movingNorth: "va hacia el norte", movingSouth: "va hacia el sur",
     culminates: "culmina a", assumedNorth: "hemisferio norte (sin ubicación)",
-    southByTz: "hemisferio sur (por zona horaria)", northByTz: "hemisferio norte (por zona horaria)",
-    solarYear: "Año solar equivalente", likeSunOn: "como el Sol del",
-    seasons: ["primavera", "verano", "otoño", "invierno"],
-    toPerigee: "Hacia el perigeo", toApogee: "Hacia el apogeo",
+    southByTz: "hemisferio sur (por zona horaria)", northByTz: "hemisferio norte (por zona horaria)",    toPerigee: "Hacia el perigeo", toApogee: "Hacia el apogeo",
     illuminated: "iluminada",
     phases: ["Luna nueva", "Creciente", "Cuarto creciente", "Gibosa creciente",
              "Luna llena", "Gibosa menguante", "Cuarto menguante", "Menguante"],
@@ -62,10 +59,7 @@ const T = {
     ascending: "Ascending ↑", descending: "Descending ↓",
     movingNorth: "moving north", movingSouth: "moving south",
     culminates: "peaks at", assumedNorth: "northern hemisphere (no location)",
-    southByTz: "southern hemisphere (from time zone)", northByTz: "northern hemisphere (from time zone)",
-    solarYear: "Solar-year equivalent", likeSunOn: "like the Sun on",
-    seasons: ["spring", "summer", "autumn", "winter"],
-    toPerigee: "Heading to perigee", toApogee: "Heading to apogee",
+    southByTz: "southern hemisphere (from time zone)", northByTz: "northern hemisphere (from time zone)",    toPerigee: "Heading to perigee", toApogee: "Heading to apogee",
     illuminated: "illuminated",
     phases: ["New Moon", "Waxing Crescent", "First Quarter", "Waxing Gibbous",
              "Full Moon", "Waning Gibbous", "Last Quarter", "Waning Crescent"],
@@ -341,19 +335,6 @@ function renderSky(date) {
   }
   $("moonAscent").innerHTML = `${movingNorth !== southern ? t("ascending") : t("descending")}
     <small>${details.join(" · ")}</small>`;
-
-  // Moon: its monthly cycle as a fractal of the solar year — the date the Sun
-  // stands at the Moon's current ecliptic longitude, and that season locally.
-  const yearStart = new Date(date);
-  yearStart.setMonth(0, 1);
-  yearStart.setHours(0, 0, 0, 0);
-  const sunTwin = A.SearchSunLongitude(norm(moonLon), yearStart, 367);
-  const season = t("seasons")[(Math.floor(norm(moonLon) / 90) + (southern ? 2 : 0)) % 4];
-  const twinDate = sunTwin
-    ? sunTwin.date.toLocaleDateString(locale(), { day: "numeric", month: "long" })
-    : "—";
-  $("moonSolar").innerHTML = `${t("likeSunOn")} ${twinDate}<small>${season}</small>`;
-
   // Moon: anomalistic — is the next apsis a perigee or an apogee?
   const apsis = A.SearchLunarApsis(date);
   const toPerigee = apsis.kind === A.ApsisKind.Pericenter;
