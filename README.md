@@ -35,9 +35,9 @@ then open http://localhost:8080.
 - Positions are for the selected day at the current wall-clock time
 - **Sun**: sign, degree within the sign, total ecliptic longitude, sunrise/sunset
 - **Moon**: phase name + % illuminated, sign and degree, moonrise/moonset, ascending/descending in the
-  biodynamic sense for your hemisphere (ascending = its daily arc is getting higher, like the
-  Sun between the winter and summer solstices), plus its north/south motion, declination and
-  peak altitude that day; heading to perigee or apogee, with days left until it
+  biodynamic sense for your hemisphere and the day it ends (ascending = its daily arc is getting higher, like the
+  Sun between the winter and summer solstices), plus its north/south motion and declination;
+  heading to perigee or apogee, with days left until it
 - **Planets** (compact): sign, degree, ℞ when retrograde
 - Light/dark theme toggle and ES/EN toggle (both remembered)
 

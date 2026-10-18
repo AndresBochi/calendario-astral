@@ -39,7 +39,7 @@ const T = {
     footnote: "Zodíaco tropical · posiciones geocéntricas calculadas en el dispositivo, para el día elegido a la hora actual.",
     ascending: "Asciende ↑", descending: "Desciende ↓",
     movingNorth: "va hacia el norte", movingSouth: "va hacia el sur",
-    culminates: "culmina a", assumedNorth: "hemisferio norte (sin ubicación)",
+    until: "hasta el", assumedNorth: "hemisferio norte (sin ubicación)",
     southByTz: "hemisferio sur (por zona horaria)", northByTz: "hemisferio norte (por zona horaria)",    toPerigee: "Hacia el perigeo", toApogee: "Hacia el apogeo",
     untilApsis: (n, hours, perigee) =>
       `${n === 1 ? "falta" : "faltan"} ${n} ${hours ? "h" : n === 1 ? "día" : "días"} ` +
@@ -61,7 +61,7 @@ const T = {
     footnote: "Tropical zodiac · geocentric positions computed on-device, for the selected day at the current time.",
     ascending: "Ascending ↑", descending: "Descending ↓",
     movingNorth: "moving north", movingSouth: "moving south",
-    culminates: "peaks at", assumedNorth: "northern hemisphere (no location)",
+    until: "until", assumedNorth: "northern hemisphere (no location)",
     southByTz: "southern hemisphere (from time zone)", northByTz: "northern hemisphere (from time zone)",    toPerigee: "Heading to perigee", toApogee: "Heading to apogee",
     untilApsis: (n, hours, perigee) =>
       `${n} ${hours ? "h" : n === 1 ? "day" : "days"} to ${perigee ? "perigee" : "apogee"}`,
@@ -201,6 +201,44 @@ function eclipticLon(body, date) {
   return A.Ecliptic(A.GeoVector(body, date, true)).elon;
 }
 
+// Geocentric declination of the Moon, from its true ecliptic coordinates of date.
+// Geocentric on purpose: the topocentric value wobbles daily with parallax,
+// which would fake turning points near the extremes.
+function moonDec(date) {
+  const r = Math.PI / 180;
+  const { lon, lat } = A.EclipticGeoMoon(date);
+  const T = (date.getTime() - Date.UTC(2000, 0, 1, 12)) / (36525 * 86400e3);
+  const eps = (23.439291 - 0.0130042 * T) * r;
+  return Math.asin(
+    Math.sin(lat * r) * Math.cos(eps) + Math.cos(lat * r) * Math.sin(eps) * Math.sin(lon * r),
+  ) / r;
+}
+
+/* When the current ascent/descent ends: the next northernmost (if moving north)
+   or southernmost (if moving south) declination. Steps ahead in 6 h until the
+   trend reverses, then narrows down the peak. */
+function nextDeclinationTurn(date, movingNorth) {
+  const sign = movingNorth ? 1 : -1;
+  const f = (ms) => sign * moonDec(new Date(ms));
+  const step = 6 * 3600e3;
+  let t = date.getTime();
+  for (let i = 0; i < 80; i++) {
+    if (f(t + step) < f(t)) {
+      let lo = Math.max(date.getTime(), t - step);
+      let hi = t + step;
+      for (let k = 0; k < 30; k++) {
+        const m1 = lo + (hi - lo) / 3;
+        const m2 = hi - (hi - lo) / 3;
+        if (f(m1) < f(m2)) lo = m1;
+        else hi = m2;
+      }
+      return new Date((lo + hi) / 2);
+    }
+    t += step;
+  }
+  return null;
+}
+
 /* Rise and set times during the given local day; null when the event
    doesn't happen that day (common for the Moon, or near the poles). */
 function riseSetOn(body, date) {
@@ -320,26 +358,21 @@ function renderSky(date) {
   // summer solstice. That means moving toward the observer's hemisphere: northward
   // in the north, southward in the south. Without a location, guess from the time zone.
   const { southern, source } = hemisphere();
-  const obs = new A.Observer(state.lat ?? 0, state.lon ?? 0, 0);
-  const decNow = A.Equator("Moon", date, obs, true, true).dec;
-  const decLater = A.Equator("Moon", new Date(date.getTime() + 3600e3), obs, true, true).dec;
-  const movingNorth = decLater > decNow;
+  const decNow = moonDec(date);
+  const movingNorth = moonDec(new Date(date.getTime() + 3600e3)) > decNow;
+  const turn = nextDeclinationTurn(date, movingNorth);
+  const until = turn
+    ? `${t("until")} ${turn.toLocaleDateString(locale(), { weekday: "long", day: "numeric", month: "long" }).replace(",", "")}`
+    : "";
   const details = [
     movingNorth ? t("movingNorth") : t("movingSouth"),
     `${Math.abs(decNow).toFixed(1)}° ${decNow >= 0 ? "N" : "S"}`,
   ];
-  if (source === "tz") {
-    details.push(southern ? t("southByTz") : t("northByTz"));
-  } else if (source === "default") {
-    details.push(t("assumedNorth"));
-  } else {
-    const midnight = new Date(date);
-    midnight.setHours(0, 0, 0, 0);
-    const transit = A.SearchHourAngle("Moon", obs, 0, midnight, +1);
-    details.push(`${t("culminates")} ${Math.round(transit.hor.altitude)}°`);
-  }
+  if (source === "tz") details.push(southern ? t("southByTz") : t("northByTz"));
+  if (source === "default") details.push(t("assumedNorth"));
   $("moonAscent").innerHTML = `${movingNorth !== southern ? t("ascending") : t("descending")}
-    <small>${details.join(" · ")}</small>`;
+    <small>${until}</small><small>${details.join(" · ")}</small>`;
+
   // Moon: anomalistic — is the next apsis a perigee or an apogee?
   const apsis = A.SearchLunarApsis(date);
   const toPerigee = apsis.kind === A.ApsisKind.Pericenter;
