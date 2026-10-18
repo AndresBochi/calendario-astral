@@ -132,6 +132,7 @@ const state = {
   lat: savedLoc?.lat ?? null,
   lon: savedLoc?.lon ?? null,
   locStatus: "locating",
+  place: "",
   selected: noonOf(new Date()),
 };
 
@@ -317,8 +318,8 @@ function renderLocation() {
   if (state.lat !== null) {
     const ns = state.lat >= 0 ? "N" : "S";
     const ew = state.lon >= 0 ? "E" : "W";
-    el.textContent =
-      `${Math.abs(state.lat).toFixed(2)}° ${ns}, ${Math.abs(state.lon).toFixed(2)}° ${ew} · ${tz}`;
+    const coords = `${Math.abs(state.lat).toFixed(2)}° ${ns}, ${Math.abs(state.lon).toFixed(2)}° ${ew}`;
+    el.textContent = [coords, state.place, tz].filter(Boolean).join(" · ");
     return;
   }
   if (state.locStatus === "locating") {
@@ -604,6 +605,7 @@ $("themeBtn").addEventListener("click", () => {
 
 $("langBtn").addEventListener("click", () => {
   state.lang = state.lang === "es" ? "en" : "es";
+  lookupPlace();
   store.set("lang", state.lang);
   renderAll();
 });
@@ -649,6 +651,7 @@ function locate() {
       state.lon = pos.coords.longitude;
       state.locStatus = "ok";
       store.set("loc", JSON.stringify({ lat: state.lat, lon: state.lon }));
+      lookupPlace();
       renderAll();
     },
     (err) => {
@@ -660,7 +663,45 @@ function locate() {
   );
 }
 
+/* Town name for the location line, from OpenStreetMap (needs internet; the
+   rest of the app doesn't). Cached on the device and looked up again only
+   after moving about 2 km or switching language. */
+async function lookupPlace() {
+  if (state.lat === null) return;
+  const { lat, lon, lang } = state;
+  let cached = null;
+  try {
+    cached = JSON.parse(store.get("place"));
+  } catch {}
+  const km = cached
+    ? Math.hypot(cached.lat - lat, (cached.lon - lon) * Math.cos(lat * Math.PI / 180)) * 111
+    : Infinity;
+  if (cached && cached.lang === lang && km < 2) {
+    state.place = cached.name;
+    renderLocation();
+    return;
+  }
+  state.place = ""; // never show a town from somewhere else
+  try {
+    const res = await fetch("https://nominatim.openstreetmap.org/reverse?format=jsonv2" +
+      `&lat=${lat}&lon=${lon}&zoom=10&accept-language=${lang}`);
+    if (!res.ok) return;
+    const a = (await res.json()).address || {};
+    const town = a.city || a.town || a.village || a.municipality || a.hamlet || a.county || "";
+    // "Bragado, Buenos Aires"; skip the region when it repeats the town (CABA).
+    const region = a.state && !a.state.includes(town) ? a.state : "";
+    const name = [town, region].filter(Boolean).join(", ");
+    if (!name) return;
+    state.place = name;
+    store.set("place", JSON.stringify({ lat, lon, lang, name }));
+    renderLocation();
+  } catch {
+    // Offline or blocked: the line keeps coordinates and time zone.
+  }
+}
+
 renderAll();
+lookupPlace();
 locate();
 
 let lastMinute = new Date().getMinutes();
