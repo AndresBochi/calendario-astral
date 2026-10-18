@@ -38,7 +38,10 @@ const T = {
     planets: "Planetas",
     footnote: "Zodíaco tropical · posiciones geocéntricas calculadas en el dispositivo, para el día elegido a la hora actual.",
     ascending: "Asciende ↑", descending: "Desciende ↓",
-    northOf: "al norte del ecuador celeste", southOf: "al sur del ecuador celeste",
+    movingNorth: "va hacia el norte", movingSouth: "va hacia el sur",
+    culminates: "culmina a", assumedNorth: "hemisferio norte (sin ubicación)",
+    solarYear: "Año solar equivalente", likeSunOn: "como el Sol del",
+    seasons: ["primavera", "verano", "otoño", "invierno"],
     toPerigee: "Hacia el perigeo", toApogee: "Hacia el apogeo",
     illuminated: "iluminada",
     phases: ["Luna nueva", "Creciente", "Cuarto creciente", "Gibosa creciente",
@@ -52,11 +55,14 @@ const T = {
   en: {
     time: "Time", sun: "Sun", moon: "Moon", sign: "Sign", today: "Today",
     degInSign: "Degree in sign", degTotal: "Total ecliptic degree",
-    ascent: "Declination", anomalistic: "Anomalistic",
+    ascent: "Ascent", anomalistic: "Anomalistic",
     planets: "Planets",
     footnote: "Tropical zodiac · geocentric positions computed on-device, for the selected day at the current time.",
     ascending: "Ascending ↑", descending: "Descending ↓",
-    northOf: "north of the celestial equator", southOf: "south of the celestial equator",
+    movingNorth: "moving north", movingSouth: "moving south",
+    culminates: "peaks at", assumedNorth: "northern hemisphere (no location)",
+    solarYear: "Solar-year equivalent", likeSunOn: "like the Sun on",
+    seasons: ["spring", "summer", "autumn", "winter"],
     toPerigee: "Heading to perigee", toApogee: "Heading to apogee",
     illuminated: "illuminated",
     phases: ["New Moon", "Waxing Crescent", "First Quarter", "Waxing Gibbous",
@@ -265,12 +271,41 @@ function renderSky(date) {
   $("moonTotal").textContent = `${norm(moonLon).toFixed(2)}°`;
   renderRiseSet("Moon", date, "moonRise", "moonSet");
 
-  // Moon: ascending/descending relative to the celestial equator (declination trend)
+  // Moon: ascending/descending in the biodynamic sense, as seen from the observer's sky.
+  // It ascends while its daily arc gets higher, like the Sun from the winter to the
+  // summer solstice. That means moving toward the observer's hemisphere: northward
+  // in the north, southward in the south. Without a location, assume the north.
+  const southern = state.lat !== null && state.lat < 0;
   const obs = new A.Observer(state.lat ?? 0, state.lon ?? 0, 0);
   const decNow = A.Equator("Moon", date, obs, true, true).dec;
   const decLater = A.Equator("Moon", new Date(date.getTime() + 3600e3), obs, true, true).dec;
-  $("moonAscent").innerHTML = `${decLater > decNow ? t("ascending") : t("descending")}
-    <small>${Math.abs(decNow).toFixed(1)}° ${decNow >= 0 ? t("northOf") : t("southOf")}</small>`;
+  const movingNorth = decLater > decNow;
+  const details = [
+    movingNorth ? t("movingNorth") : t("movingSouth"),
+    `${Math.abs(decNow).toFixed(1)}° ${decNow >= 0 ? "N" : "S"}`,
+  ];
+  if (state.lat === null) {
+    details.push(t("assumedNorth"));
+  } else {
+    const midnight = new Date(date);
+    midnight.setHours(0, 0, 0, 0);
+    const transit = A.SearchHourAngle("Moon", obs, 0, midnight, +1);
+    details.push(`${t("culminates")} ${Math.round(transit.hor.altitude)}°`);
+  }
+  $("moonAscent").innerHTML = `${movingNorth !== southern ? t("ascending") : t("descending")}
+    <small>${details.join(" · ")}</small>`;
+
+  // Moon: its monthly cycle as a fractal of the solar year — the date the Sun
+  // stands at the Moon's current ecliptic longitude, and that season locally.
+  const yearStart = new Date(date);
+  yearStart.setMonth(0, 1);
+  yearStart.setHours(0, 0, 0, 0);
+  const sunTwin = A.SearchSunLongitude(norm(moonLon), yearStart, 367);
+  const season = t("seasons")[(Math.floor(norm(moonLon) / 90) + (southern ? 2 : 0)) % 4];
+  const twinDate = sunTwin
+    ? sunTwin.date.toLocaleDateString(locale(), { day: "numeric", month: "long" })
+    : "—";
+  $("moonSolar").innerHTML = `${t("likeSunOn")} ${twinDate}<small>${season}</small>`;
 
   // Moon: anomalistic — is the next apsis a perigee or an apogee?
   const apsis = A.SearchLunarApsis(date);
