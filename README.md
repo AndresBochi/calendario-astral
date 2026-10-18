@@ -7,6 +7,8 @@ Real-time Sun, Moon and planet positions in a calendar-page layout.
 ## Publish changes
 
 Commit and push to `main`; GitHub Pages redeploys in about a minute.
+Bump the `?v=` number on `styles.css` and `app.js` in `index.html` with every change,
+so browsers don't keep running the old cached files.
 
 ```
 git add -A
