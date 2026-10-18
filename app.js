@@ -40,6 +40,7 @@ const T = {
     ascending: "Asciende ↑", descending: "Desciende ↓",
     movingNorth: "va hacia el norte", movingSouth: "va hacia el sur",
     culminates: "culmina a", assumedNorth: "hemisferio norte (sin ubicación)",
+    southByTz: "hemisferio sur (por zona horaria)", northByTz: "hemisferio norte (por zona horaria)",
     solarYear: "Año solar equivalente", likeSunOn: "como el Sol del",
     seasons: ["primavera", "verano", "otoño", "invierno"],
     toPerigee: "Hacia el perigeo", toApogee: "Hacia el apogeo",
@@ -61,6 +62,7 @@ const T = {
     ascending: "Ascending ↑", descending: "Descending ↓",
     movingNorth: "moving north", movingSouth: "moving south",
     culminates: "peaks at", assumedNorth: "northern hemisphere (no location)",
+    southByTz: "southern hemisphere (from time zone)", northByTz: "northern hemisphere (from time zone)",
     solarYear: "Solar-year equivalent", likeSunOn: "like the Sun on",
     seasons: ["spring", "summer", "autumn", "winter"],
     toPerigee: "Heading to perigee", toApogee: "Heading to apogee",
@@ -131,6 +133,50 @@ function viewDate(now) {
   return d;
 }
 
+/* ---------- hemisphere ---------- */
+
+// Time zones south of the equator, used to guess the hemisphere when the
+// viewer doesn't share their location.
+const SOUTHERN_TZ_PREFIXES = ["Australia/", "Antarctica/", "America/Argentina/"];
+const SOUTHERN_TZ = new Set([
+  // South America
+  "America/Buenos_Aires", "America/Cordoba", "America/Mendoza", "America/Catamarca",
+  "America/Jujuy", "America/Rosario", "America/Santiago", "America/Punta_Arenas",
+  "America/Montevideo", "America/Asuncion", "America/La_Paz", "America/Lima",
+  "America/Guayaquil", "America/Sao_Paulo", "America/Bahia", "America/Recife",
+  "America/Fortaleza", "America/Belem", "America/Maceio", "America/Araguaina",
+  "America/Cuiaba", "America/Campo_Grande", "America/Porto_Velho", "America/Rio_Branco",
+  "America/Manaus", "America/Santarem", "America/Noronha", "America/Eirunepe",
+  "Brazil/East", "Chile/Continental",
+  // Africa
+  "Africa/Johannesburg", "Africa/Maputo", "Africa/Harare", "Africa/Lusaka",
+  "Africa/Lubumbashi", "Africa/Kinshasa", "Africa/Luanda", "Africa/Windhoek",
+  "Africa/Gaborone", "Africa/Maseru", "Africa/Mbabane", "Africa/Blantyre",
+  "Africa/Dar_es_Salaam", "Africa/Nairobi", "Africa/Kigali", "Africa/Bujumbura",
+  "Africa/Brazzaville",
+  // Indian Ocean, Southeast Asia
+  "Indian/Antananarivo", "Indian/Mauritius", "Indian/Reunion", "Indian/Mayotte",
+  "Indian/Comoro", "Indian/Chagos", "Indian/Kerguelen", "Indian/Cocos", "Indian/Christmas",
+  "Asia/Jakarta", "Asia/Makassar", "Asia/Jayapura", "Asia/Dili",
+  // Pacific, Atlantic
+  "Pacific/Auckland", "Pacific/Chatham", "Pacific/Fiji", "Pacific/Tongatapu",
+  "Pacific/Apia", "Pacific/Noumea", "Pacific/Efate", "Pacific/Port_Moresby",
+  "Pacific/Bougainville", "Pacific/Guadalcanal", "Pacific/Norfolk", "Pacific/Tahiti",
+  "Pacific/Marquesas", "Pacific/Gambier", "Pacific/Pitcairn", "Pacific/Rarotonga",
+  "Pacific/Niue", "Pacific/Pago_Pago", "Pacific/Fakaofo", "Pacific/Funafuti",
+  "Pacific/Wallis", "Pacific/Easter", "Pacific/Galapagos", "NZ",
+  "Atlantic/St_Helena", "Atlantic/South_Georgia", "Atlantic/Stanley",
+]);
+
+// GPS when available, otherwise a guess from the time zone, otherwise north.
+function hemisphere() {
+  if (state.lat !== null) return { southern: state.lat < 0, source: "gps" };
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+  if (!tz) return { southern: false, source: "default" };
+  const southern = SOUTHERN_TZ.has(tz) || SOUTHERN_TZ_PREFIXES.some((p) => tz.startsWith(p));
+  return { southern, source: "tz" };
+}
+
 /* ---------- astro helpers ---------- */
 
 const norm = (x) => ((x % 360) + 360) % 360;
@@ -192,8 +238,7 @@ function moonSVG(fraction, waxing, size) {
   const rx = Math.abs(1 - 2 * fraction) * 50;
   const sweep = fraction < 0.5 ? 0 : 1;
   const d = `M50 0 A50 50 0 0 1 50 100 A${rx.toFixed(2)} 50 0 0 ${sweep} 50 0Z`;
-  const southern = state.lat !== null && state.lat < 0;
-  const mirror = !waxing !== southern;
+  const mirror = !waxing !== hemisphere().southern;
   return `<svg viewBox="-2 -2 104 104" width="${size}" height="${size}" aria-hidden="true">
     <circle cx="50" cy="50" r="50" class="moon-dark"/>
     <path d="${d}" class="moon-lit"${mirror ? ' transform="translate(100 0) scale(-1 1)"' : ""}/>
@@ -274,8 +319,8 @@ function renderSky(date) {
   // Moon: ascending/descending in the biodynamic sense, as seen from the observer's sky.
   // It ascends while its daily arc gets higher, like the Sun from the winter to the
   // summer solstice. That means moving toward the observer's hemisphere: northward
-  // in the north, southward in the south. Without a location, assume the north.
-  const southern = state.lat !== null && state.lat < 0;
+  // in the north, southward in the south. Without a location, guess from the time zone.
+  const { southern, source } = hemisphere();
   const obs = new A.Observer(state.lat ?? 0, state.lon ?? 0, 0);
   const decNow = A.Equator("Moon", date, obs, true, true).dec;
   const decLater = A.Equator("Moon", new Date(date.getTime() + 3600e3), obs, true, true).dec;
@@ -284,7 +329,9 @@ function renderSky(date) {
     movingNorth ? t("movingNorth") : t("movingSouth"),
     `${Math.abs(decNow).toFixed(1)}° ${decNow >= 0 ? "N" : "S"}`,
   ];
-  if (state.lat === null) {
+  if (source === "tz") {
+    details.push(southern ? t("southByTz") : t("northByTz"));
+  } else if (source === "default") {
     details.push(t("assumedNorth"));
   } else {
     const midnight = new Date(date);
