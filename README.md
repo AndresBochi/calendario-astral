@@ -55,7 +55,8 @@ The row of days under the date, each with a small drawing of that day's Moon pha
 | **Grado del signo** (Degree in sign) | 25°15′ | How far the Sun has gone into that sign. Each sign spans 30°, so this goes from 0°00′ to 29°59′ (degrees and arcminutes; 60′ = 1°). The Sun moves about 1° a day, so 25°15′ means it will enter the next sign in about 5 days. |
 | **Grado eclíptico total** (Total ecliptic degree) | 205.25° | The same position measured around the whole zodiac circle (0°–360°), starting at 0° Aries. Every 30° is one sign; see the [table below](#signs-and-their-degrees). 205.25° = 180° (start of Libra) + 25.25°. |
 | **Salida del sol** (Sunrise) | 06:15 | When the Sun rises at the selected place on the selected day, in local time. |
-| **Puesta del sol** (Sunset) | 19:20 | When it sets. Near the poles, "no ocurre este día" (none this day) means the Sun doesn't rise or doesn't set that day. |
+| **Puesta del sol** (Sunset) | 19:19 | When it sets. Near the poles, "no ocurre este día" (none this day) means the Sun doesn't rise or doesn't set that day. |
+| *gray line under sunset* | 13 h 04 min sobre el horizonte | Hours of daylight: the total time the Sun is above the horizon that day, from local midnight to midnight. |
 
 ### Luna (Moon)
 
@@ -68,6 +69,7 @@ The row of days under the date, each with a small drawing of that day's Moon pha
 | **Anomalístico** (Anomalistic) | Hacia el perigeo — faltan 10 días | Whether the Moon is getting closer to the Earth or farther away, and how many whole days are left until the turning point. See [Perigee and apogee](#perigee-and-apogee). |
 | **Salida de la luna** (Moonrise) | 11:42 | When the Moon rises at the selected place that day, in local time. |
 | **Puesta de la luna** (Moonset) | 01:48 | When it sets. The Moon rises about 50 minutes later each day, so about once a month there's a day with no moonrise or no moonset; the row then says "no ocurre este día" (none this day). A moonset can come before the moonrise on the same day: that's the Moon that rose the day before. |
+| *gray line under moonset* | 14 h 10 min sobre el horizonte | The total time the Moon is above the horizon that day, from local midnight to midnight. When it sets in the early morning and rises again later, both stretches are added (e.g. 00:00–01:59 plus 11:49–24:00). |
 
 #### Ascending and descending Moon
 

@@ -48,6 +48,10 @@ const T = {
     sunrise: "Salida del sol", sunset: "Puesta del sol",
     moonrise: "Salida de la luna", moonset: "Puesta de la luna",
     noEvent: "no ocurre este día", needsLocation: "requiere ubicación",
+    aboveHorizon: (ms) => {
+      const min = Math.round(ms / 60000);
+      return `${Math.floor(min / 60)} h ${pad(min % 60)} min sobre el horizonte`;
+    },
     locating: "Buscando ubicación…", noLocation: "Ubicación no disponible",
     locTitle: "Tu ubicación", useLocation: "Usar mi ubicación (GPS)",
     chooseLocation: "Elegir ubicación", changeLocation: "Cambiar ubicación",
@@ -81,6 +85,10 @@ const T = {
     sunrise: "Sunrise", sunset: "Sunset",
     moonrise: "Moonrise", moonset: "Moonset",
     noEvent: "none this day", needsLocation: "needs location",
+    aboveHorizon: (ms) => {
+      const min = Math.round(ms / 60000);
+      return `${Math.floor(min / 60)} h ${pad(min % 60)} min above the horizon`;
+    },
     locating: "Locating…", noLocation: "Location unavailable",
     locTitle: "Your location", useLocation: "Use my location (GPS)",
     chooseLocation: "Set location", changeLocation: "Change location",
@@ -340,6 +348,48 @@ function renderRiseSet(body, day, riseId, setId) {
     : t("noEvent");
   $(riseId).textContent = fmt(rise);
   $(setId).textContent = fmt(set);
+  const small = document.createElement("small");
+  small.textContent = t("aboveHorizon")(timeAboveHorizon(body, day));
+  $(setId).append(small);
+}
+
+/* Total time above the horizon during the calendar day at the location (local
+   midnight to midnight), adding up every stretch between a rise and a set. For
+   the Moon that is often two stretches: until it sets, and after it rises. */
+function timeAboveHorizon(body, day) {
+  const obs = new A.Observer(state.lat, state.lon, 0);
+  const start = instantAt(day);
+  const end = instantAt(addDays(day, 1));
+  const next = (direction, from) => {
+    const r = A.SearchRiseSet(body, obs, direction, from, (end - from) / 86400e3);
+    return r && r.date < end ? r.date : null;
+  };
+  const firstRise = next(+1, start);
+  const firstSet = next(-1, start);
+  let up;
+  if (firstRise || firstSet) {
+    up = Boolean(firstSet) && (!firstRise || firstSet < firstRise);
+  } else {
+    // No rise or set all day (polar day/night): up or down the whole time.
+    const eq = A.Equator(body, start, obs, true, true);
+    up = A.Horizon(start, obs, eq.ra, eq.dec, "normal").altitude > 0;
+  }
+  let total = 0;
+  let cursor = start;
+  for (let i = 0; i < 6; i++) {
+    if (up) {
+      const set = next(-1, cursor);
+      total += (set ?? end) - cursor;
+      if (!set) break;
+      cursor = set;
+    } else {
+      const rise = next(+1, cursor);
+      if (!rise) break;
+      cursor = rise;
+    }
+    up = !up;
+  }
+  return total;
 }
 
 function phaseIndex(angle) {
