@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#b23a2e">
+  <title>Calendario Astral</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Inter:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="page">
+    <div class="rings" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+
+    <header class="cal-head">
+      <div class="head-row">
+        <span class="app-name">Calendario Astral</span>
+        <div class="controls">
+          <button id="todayBtn" class="chip" type="button" data-i18n="today" hidden></button>
+          <button id="langBtn" class="chip" type="button" aria-label="Language">EN</button>
+          <button id="themeBtn" class="chip" type="button" aria-label="Theme"></button>
+        </div>
+      </div>
+      <div class="head-row nav">
+        <div class="stepper">
+          <button id="prevMonth" class="arrow" type="button" aria-label="Previous month">‹</button>
+          <span id="month" class="month"></span>
+          <button id="nextMonth" class="arrow" type="button" aria-label="Next month">›</button>
+        </div>
+        <div class="stepper">
+          <button id="prevYear" class="arrow" type="button" aria-label="Previous year">‹</button>
+          <span id="year" class="year"></span>
+          <button id="nextYear" class="arrow" type="button" aria-label="Next year">›</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="today">
+      <div class="today-date">
+        <div id="weekday" class="weekday"></div>
+        <div id="daynum" class="daynum"></div>
+        <button id="dmyBtn" class="dmy" type="button">
+          <span id="dmy"></span>
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="2"/></svg>
+        </button>
+        <input id="datePick" class="date-pick" type="date" tabindex="-1" aria-hidden="true">
+      </div>
+      <div class="today-time">
+        <div class="label" data-i18n="time"></div>
+        <div id="clock" class="clock"></div>
+        <div id="location" class="loc"></div>
+      </div>
+    </section>
+
+    <section class="days" id="days" aria-label="days"></section>
+
+    <section class="grid">
+      <article class="cell sun">
+        <header class="cell-head">
+          <span class="body-glyph">☉</span>
+          <h2 data-i18n="sun"></h2>
+        </header>
+        <div class="big-sign">
+          <span id="sunSignGlyph" class="sign-glyph"></span>
+          <span id="sunSign" class="sign-name"></span>
+        </div>
+        <dl class="facts">
+          <div><dt data-i18n="degInSign"></dt><dd id="sunDeg"></dd></div>
+          <div><dt data-i18n="degTotal"></dt><dd id="sunTotal"></dd></div>
+          <div><dt data-i18n="sunrise"></dt><dd id="sunRise"></dd></div>
+          <div><dt data-i18n="sunset"></dt><dd id="sunSet"></dd></div>
+        </dl>
+      </article>
+
+      <article class="cell moon">
+        <header class="cell-head">
+          <span class="body-glyph">☽</span>
+          <h2 data-i18n="moon"></h2>
+        </header>
+        <div class="moon-top">
+          <div id="moonIcon" class="moon-icon"></div>
+          <div>
+            <div id="moonPhase" class="phase-name"></div>
+            <div id="moonIllum" class="illum"></div>
+          </div>
+        </div>
+        <dl class="facts">
+          <div><dt data-i18n="sign"></dt><dd id="moonSign"></dd></div>
+          <div><dt data-i18n="degTotal"></dt><dd id="moonTotal"></dd></div>
+          <div><dt data-i18n="moonrise"></dt><dd id="moonRise"></dd></div>
+          <div><dt data-i18n="moonset"></dt><dd id="moonSet"></dd></div>
+          <div><dt data-i18n="ascent"></dt><dd id="moonAscent"></dd></div>
+          <div><dt data-i18n="anomalistic"></dt><dd id="moonApsis"></dd></div>
+        </dl>
+      </article>
+    </section>
+
+    <section class="planets">
+      <h3 data-i18n="planets"></h3>
+      <ul id="planetList"></ul>
+    </section>
+
+    <footer class="foot" data-i18n="footnote"></footer>
+  </main>
+
+  <script src="vendor/astronomy.browser.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
