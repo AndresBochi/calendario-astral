@@ -35,8 +35,8 @@ then open http://localhost:8080.
 - Positions are for the selected day at the current wall-clock time
 - **Sun**: sign, degree within the sign, total ecliptic longitude, sunrise/sunset
 - **Moon**: phase name + % illuminated, sign and degree, moonrise/moonset, ascending/descending in the
-  biodynamic sense for your hemisphere and the day it ends (ascending = its daily arc is getting higher, like the
-  Sun between the winter and summer solstices), plus its north/south motion and declination;
+  biodynamic sense, seen from your exact location (ascending = each day it culminates higher
+  in your sky, like the Sun between the winter and summer solstices) and the day it ends;
   heading to perigee or apogee, with days left until it
 - **Planets** (compact): sign, degree, ℞ when retrograde
 - Light/dark theme toggle and ES/EN toggle (both remembered)
@@ -47,9 +47,9 @@ then open http://localhost:8080.
   (MIT, vendored in `vendor/`), so no internet connection is needed. Only the web fonts
   load from the internet, and the app falls back to system fonts without them.
 - Zodiac is tropical (ecliptic of date), with geocentric positions.
-- Location is used for rise/set times, the hemisphere (ascending/descending, moon icon
-  orientation) and the displayed coordinates. Without it, the hemisphere is guessed from the
-  device time zone.
+- Your location is needed for rise/set times and ascending/descending. The last known
+  location is remembered on the device; if location is off, the page offers a button to turn
+  it on. Without it, the time zone only decides which side of the moon icons is lit.
 
 ## Next step: Android
 
