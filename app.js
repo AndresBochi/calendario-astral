@@ -33,7 +33,7 @@ const PLANETS = [
 const T = {
   es: {
     time: "Hora", sun: "Sol", moon: "Luna", sign: "Signo", today: "Hoy",
-    degInSign: "Grado eclíptico del signo", degTotal: "Grado eclíptico total",
+    degInSign: "Grado del signo", degTotal: "Grado eclíptico total",
     ascent: "Ascenso", anomalistic: "Anomalístico",
     planets: "Planetas",
     footnote: "Zodíaco tropical · posiciones geocéntricas calculadas en el dispositivo, para el día elegido a la hora actual.",
