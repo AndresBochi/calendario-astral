@@ -2,7 +2,19 @@
 
 Real-time Sun, Moon and planet positions in a calendar-page layout.
 
-## Run
+**Live:** https://andresbochi.github.io/calendario-astral/
+
+## Publish changes
+
+Commit and push to `main`; GitHub Pages redeploys in about a minute.
+
+```
+git add -A
+git commit -m "Describe the change"
+git push
+```
+
+## Run locally
 
 Serve the folder over `localhost` (geolocation needs a secure context), e.g.
 
