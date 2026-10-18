@@ -50,6 +50,10 @@ then open http://localhost:8080.
   OpenStreetMap's Nominatim service, which needs internet and receives the coordinates.
   It's cached on the device and looked up again only after moving about 2 km.
 - Zodiac is tropical (ecliptic of date), with geocentric positions.
+- Dates and times follow the location's time zone, found offline from the coordinates with
+  [tz-lookup](https://github.com/photostructure/tz-lookup) (CC0, vendored in `vendor/`).
+  Picking another city switches the clock, "today", the day strip and the rise/set times to
+  that place's local time.
 - Your location is needed for rise/set times and ascending/descending. The last known
   location is remembered on the device. If the browser refuses location (common on iPhone,
   where Safari/Chrome website location is switched off in iOS Settings and the page is never

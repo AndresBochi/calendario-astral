@@ -36,7 +36,7 @@ const T = {
     degInSign: "Grado del signo", degTotal: "Grado eclíptico total",
     ascent: "Ascenso", anomalistic: "Anomalístico",
     planets: "Planetas",
-    footnote: "Zodíaco tropical · posiciones geocéntricas calculadas en el dispositivo, para el día elegido a la hora actual.",
+    footnote: "Zodíaco tropical · posiciones geocéntricas calculadas en el dispositivo, para el día elegido a la hora local del lugar.",
     ascending: "Asciende ↑", descending: "Desciende ↓",
     until: "hasta el", movingNorth: "hacia el norte", movingSouth: "hacia el sur",
     toPerigee: "Hacia el perigeo", toApogee: "Hacia el apogeo",
@@ -69,7 +69,7 @@ const T = {
     degInSign: "Degree in sign", degTotal: "Total ecliptic degree",
     ascent: "Ascent", anomalistic: "Anomalistic",
     planets: "Planets",
-    footnote: "Tropical zodiac · geocentric positions computed on-device, for the selected day at the current time.",
+    footnote: "Tropical zodiac · geocentric positions computed on-device, for the selected day at the local time of the place.",
     ascending: "Ascending ↑", descending: "Descending ↓",
     until: "until", movingNorth: "moving north", movingSouth: "moving south",
     toPerigee: "Heading to perigee", toApogee: "Heading to apogee",
@@ -105,35 +105,81 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, v); } catch {} },
 };
 
-/* ---------- date helpers ---------- */
+/* ---------- calendar days ---------- */
 
-// Selected days are kept at local noon so DST shifts never move them to another date.
-function noonOf(d) {
-  const n = new Date(d);
-  n.setHours(12, 0, 0, 0);
+// A calendar day is a Date at 12:00 UTC read with the UTC getters: it names a
+// day, not a moment. Moments come from instantAt() in the location's time zone.
+function calDay(y, m, d) {
+  const n = new Date(Date.UTC(2000, 0, 1, 12));
+  n.setUTCFullYear(y, m, d); // also handles years 0–99 and month/day overflow
   return n;
 }
 
 function addDays(d, k) {
   const n = new Date(d);
-  n.setDate(n.getDate() + k);
+  n.setUTCDate(n.getUTCDate() + k);
   return n;
 }
 
 function shiftMonths(d, months) {
-  const n = new Date(d);
-  const day = n.getDate();
-  n.setDate(1);
-  n.setMonth(n.getMonth() + months);
-  const last = new Date(n);
-  last.setMonth(last.getMonth() + 1, 0);
-  n.setDate(Math.min(day, last.getDate())); // 31 Jan → 28/29 Feb
+  const n = calDay(d.getUTCFullYear(), d.getUTCMonth() + months, 1);
+  const last = calDay(n.getUTCFullYear(), n.getUTCMonth() + 1, 0).getUTCDate();
+  n.setUTCDate(Math.min(d.getUTCDate(), last)); // 31 Jan → 28/29 Feb
   return n;
 }
 
-const sameDay = (a, b) => a.toDateString() === b.toDateString();
 const pad = (n, w = 2) => String(n).padStart(w, "0");
-const isoDate = (d) => `${pad(d.getFullYear(), 4)}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const isoDate = (d) => `${pad(d.getUTCFullYear(), 4)}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+const sameDay = (a, b) => isoDate(a) === isoDate(b);
+
+/* ---------- the location's time zone ---------- */
+
+const deviceTz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
+// Time zone at the coordinates (offline lookup), or the device's without a location.
+function tzFor(lat, lon) {
+  if (lat === null || lat === undefined) return deviceTz;
+  try {
+    return tzlookup(lat, lon);
+  } catch {
+    return deviceTz;
+  }
+}
+
+const zoneFormatters = {};
+
+// Wall-clock fields of a moment, as the location's clocks show it.
+function zoned(date) {
+  const tz = state.tz;
+  zoneFormatters[tz] ??= new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric",
+    hour: "numeric", minute: "numeric", second: "numeric",
+  });
+  const p = {};
+  for (const { type, value } of zoneFormatters[tz].formatToParts(date)) p[type] = Number(value);
+  return { y: p.year, m: p.month - 1, d: p.day, h: p.hour, mi: p.minute, s: p.second };
+}
+
+const todayCal = () => {
+  const z = zoned(new Date());
+  return calDay(z.y, z.m, z.d);
+};
+
+// The moment when the location's clocks show this time on this calendar day.
+function instantAt(day, h = 0, mi = 0, s = 0) {
+  const wall = (y, m, d, hh, mm, ss) => {
+    const n = calDay(y, m, d);
+    n.setUTCHours(hh, mm, ss, 0);
+    return n.getTime();
+  };
+  const target = wall(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), h, mi, s);
+  let ms = target;
+  for (let i = 0; i < 3; i++) {
+    const z = zoned(new Date(ms));
+    ms += target - wall(z.y, z.m, z.d, z.h, z.mi, z.s);
+  }
+  return new Date(ms);
+}
 
 /* ---------- state ---------- */
 
@@ -155,14 +201,23 @@ const state = {
   lon: savedLoc?.lon ?? null,
   locStatus: "locating",
   place: "",
-  selected: noonOf(new Date()),
+  tz: tzFor(savedLoc?.lat, savedLoc?.lon),
+  selected: null,
 };
+state.selected = todayCal();
 
-// The sky is shown for the selected day at the current wall-clock time.
+// After the location changes: switch to its time zone, and if "today" was
+// showing, move to today over there (it can be another date).
+function updateZone() {
+  const wasToday = sameDay(state.selected, todayCal());
+  state.tz = tzFor(state.lat, state.lon);
+  if (wasToday) state.selected = todayCal();
+}
+
+// The sky is shown for the selected day at the location's current time.
 function viewDate(now) {
-  const d = new Date(state.selected);
-  d.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), 0);
-  return d;
+  const z = zoned(now);
+  return instantAt(state.selected, z.h, z.mi, z.s);
 }
 
 /* ---------- hemisphere ---------- */
@@ -258,27 +313,28 @@ function lunarArc(date) {
   return { ascending, movingNorth, end: null };
 }
 
-/* Rise and set times during the given local day; null when the event
-   doesn't happen that day (common for the Moon, or near the poles). */
-function riseSetOn(body, date) {
+/* Rise and set times during the given calendar day at the location (midnight
+   to midnight on its clocks); null when the event doesn't happen that day
+   (common for the Moon, or near the poles). */
+function riseSetOn(body, day) {
   const obs = new A.Observer(state.lat, state.lon, 0);
-  const midnight = new Date(date);
-  midnight.setHours(0, 0, 0, 0);
+  const start = instantAt(day);
+  const days = (instantAt(addDays(day, 1)) - start) / 86400e3; // 23–25 h on DST changes
   const find = (direction) => {
-    const r = A.SearchRiseSet(body, obs, direction, midnight, 1);
+    const r = A.SearchRiseSet(body, obs, direction, start, days);
     return r ? r.date : null;
   };
   return { rise: find(+1), set: find(-1) };
 }
 
-function renderRiseSet(body, date, riseId, setId) {
+function renderRiseSet(body, day, riseId, setId) {
   if (state.lat === null) {
     $(riseId).textContent = $(setId).textContent = t("needsLocation");
     return;
   }
-  const { rise, set } = riseSetOn(body, date);
+  const { rise, set } = riseSetOn(body, day);
   const fmt = (d) => d
-    ? d.toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit", hour12: false })
+    ? d.toLocaleTimeString(locale(), { timeZone: state.tz, hour: "2-digit", minute: "2-digit", hour12: false })
     : t("noEvent");
   $(riseId).textContent = fmt(rise);
   $(setId).textContent = fmt(set);
@@ -314,7 +370,7 @@ function renderStatic() {
   const dark = state.theme === "dark";
   $("themeBtn").textContent = dark ? "☀︎" : "☾︎";
   $("themeBtn").title = dark ? t("themeLight") : t("themeDark");
-  $("todayBtn").hidden = sameDay(state.selected, new Date());
+  $("todayBtn").hidden = sameDay(state.selected, todayCal());
   document.querySelector('meta[name="theme-color"]').content = dark ? "#7b6cf0" : "#b23a2e";
   $("cityInput").placeholder = t("cityPlaceholder");
 }
@@ -322,21 +378,22 @@ function renderStatic() {
 function renderDate() {
   const d = state.selected;
   const loc = locale();
-  $("month").textContent = d.toLocaleDateString(loc, { month: "long" });
-  $("year").textContent = d.getFullYear();
-  $("weekday").textContent = d.toLocaleDateString(loc, { weekday: "long" });
-  $("daynum").textContent = d.getDate();
-  $("dmy").textContent = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+  $("month").textContent = d.toLocaleDateString(loc, { timeZone: "UTC", month: "long" });
+  $("year").textContent = d.getUTCFullYear();
+  $("weekday").textContent = d.toLocaleDateString(loc, { timeZone: "UTC", weekday: "long" });
+  $("daynum").textContent = d.getUTCDate();
+  $("dmy").textContent = `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`;
 }
 
+// The location's local time.
 function renderClock(now) {
   $("clock").textContent = now.toLocaleTimeString(locale(), {
-    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+    timeZone: state.tz, hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
   });
 }
 
 function renderLocation() {
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const tz = state.tz;
   const el = $("location");
   if (state.lat !== null) {
     const ns = state.lat >= 0 ? "N" : "S";
@@ -389,7 +446,7 @@ function renderSky(date) {
   $("sunSign").textContent = sun.sign[state.lang];
   $("sunDeg").textContent = fmtDeg(sun.deg);
   $("sunTotal").textContent = `${sunLon.toFixed(2)}°`;
-  renderRiseSet("Sun", date, "sunRise", "sunSet");
+  renderRiseSet("Sun", state.selected, "sunRise", "sunSet");
 
   // Moon: phase + illumination
   const angle = A.MoonPhase(date);
@@ -404,7 +461,7 @@ function renderSky(date) {
   $("moonSign").innerHTML =
     `${glyph(moon.sign.g)} ${moon.sign[state.lang]} ${fmtDeg(moon.deg)}`;
   $("moonTotal").textContent = `${norm(moonLon).toFixed(2)}°`;
-  renderRiseSet("Moon", date, "moonRise", "moonSet");
+  renderRiseSet("Moon", state.selected, "moonRise", "moonSet");
 
   // Moon: ascending/descending, from the observer's exact spot.
   if (state.lat === null) {
@@ -413,7 +470,7 @@ function renderSky(date) {
     const arc = lunarArc(date);
     const until = arc.end
       ? `${t("until")} ${arc.end.toLocaleDateString(locale(),
-        { weekday: "long", day: "numeric", month: "long" }).replace(",", "")}`
+        { timeZone: state.tz, weekday: "long", day: "numeric", month: "long" }).replace(",", "")}`
       : "";
     $("moonAscent").innerHTML =
       `${arc.ascending ? t("ascending") : t("descending")}` +
@@ -474,19 +531,20 @@ let settleTimer = 0;
 
 function buildStrip() {
   const loc = locale();
-  const today = new Date();
+  const today = todayCal();
   let html = "";
   for (let k = -RADIUS; k <= RADIUS; k++) {
     const day = addDays(state.selected, k);
-    const angle = A.MoonPhase(day);
-    const frac = A.Illumination("Moon", day).phase_fraction;
-    const label = day.getDate() === 1
-      ? `<span class="mo">${day.toLocaleDateString(loc, { month: "short" }).replace(".", "")}</span>`
-      : `<span>${day.toLocaleDateString(loc, { weekday: "short" }).replace(".", "")}</span>`;
+    const noon = instantAt(day, 12);
+    const angle = A.MoonPhase(noon);
+    const frac = A.Illumination("Moon", noon).phase_fraction;
+    const label = day.getUTCDate() === 1
+      ? `<span class="mo">${day.toLocaleDateString(loc, { timeZone: "UTC", month: "short" }).replace(".", "")}</span>`
+      : `<span>${day.toLocaleDateString(loc, { timeZone: "UTC", weekday: "short" }).replace(".", "")}</span>`;
     const cls = ["wd", sameDay(day, today) && "is-today", k === 0 && "is-center"]
       .filter(Boolean).join(" ");
     html += `<button type="button" class="${cls}" data-t="${day.getTime()}">${label}
-      <b>${day.getDate()}</b>${moonSVG(frac, angle < 180, 18)}</button>`;
+      <b>${day.getUTCDate()}</b>${moonSVG(frac, angle < 180, 18)}</button>`;
   }
   strip.innerHTML = html;
   items = [...strip.querySelectorAll(".wd")];
@@ -548,7 +606,7 @@ function rebuildIfNearEdge(i) {
 function commit(i) {
   const d = itemDate(items[i]);
   if (!sameDay(d, state.selected)) {
-    state.selected = noonOf(d);
+    state.selected = d;
     renderSelection();
   }
   rebuildIfNearEdge(i);
@@ -567,9 +625,9 @@ function scheduleSnap() {
   settleTimer = setTimeout(snap, 120);
 }
 
-// Jump to any date: update the data right away, then glide the strip there.
-function goTo(date) {
-  state.selected = noonOf(date);
+// Jump to any calendar day: update the data right away, then glide the strip there.
+function goTo(day) {
+  state.selected = day;
   renderSelection();
   const i = items.findIndex((el) => sameDay(itemDate(el), state.selected));
   if (i < 0) {
@@ -659,7 +717,7 @@ $("langBtn").addEventListener("click", () => {
   renderAll();
 });
 
-$("todayBtn").addEventListener("click", () => goTo(new Date()));
+$("todayBtn").addEventListener("click", () => goTo(todayCal()));
 $("prevMonth").addEventListener("click", () => goTo(shiftMonths(state.selected, -1)));
 $("nextMonth").addEventListener("click", () => goTo(shiftMonths(state.selected, 1)));
 $("prevYear").addEventListener("click", () => goTo(shiftMonths(state.selected, -12)));
@@ -679,9 +737,7 @@ $("dmyBtn").addEventListener("click", () => {
 $("datePick").addEventListener("change", (e) => {
   const [y, m, d] = e.target.value.split("-").map(Number);
   if (!y) return;
-  const date = new Date(state.selected);
-  date.setFullYear(y, m - 1, d);
-  goTo(date);
+  goTo(calDay(y, m - 1, d));
 });
 
 function locate() {
@@ -699,6 +755,7 @@ function locate() {
       state.lat = pos.coords.latitude;
       state.lon = pos.coords.longitude;
       state.locStatus = "ok";
+      updateZone();
       store.set("loc", JSON.stringify({ lat: state.lat, lon: state.lon }));
       $("locPanel").hidden = true;
       lookupPlace();
@@ -748,11 +805,14 @@ async function lookupPlace() {
   }
 }
 
-// "Bragado, Buenos Aires, Argentina"; skips the region when it repeats the town (CABA).
-function placeName(a = {}) {
-  const town = a.city || a.town || a.village || a.municipality || a.hamlet || a.county || "";
-  const region = a.state && !a.state.includes(town) ? a.state : "";
-  return [town, region, a.country].filter(Boolean).join(", ");
+// "Bragado, Buenos Aires, Argentina"; skips the region when it repeats the town
+// (CABA, Tokyo). `fallback` is the result's own name, for places filed as a
+// province or state rather than a city.
+function placeName(a = {}, fallback = "") {
+  const town = a.city || a.town || a.village || a.municipality || a.hamlet || a.county || fallback;
+  const region = a.state || a.province || "";
+  const showRegion = region && !(town && region.includes(town));
+  return [town, showRegion && region, a.country].filter(Boolean).join(", ");
 }
 
 /* ---------- location panel: GPS or city search ---------- */
@@ -762,6 +822,7 @@ function setManualLocation(lat, lon, name) {
   state.lon = lon;
   state.locStatus = "manual";
   state.place = name;
+  updateZone();
   store.set("loc", JSON.stringify({ lat, lon, manual: true }));
   store.set("place2", JSON.stringify({ lat, lon, lang: state.lang, name }));
   $("locPanel").hidden = true;
@@ -792,7 +853,7 @@ $("citySearch").addEventListener("submit", async (e) => {
       return;
     }
     $("cityResults").replaceChildren(...results.map((r) => {
-      const name = placeName(r.address) || r.display_name;
+      const name = placeName(r.address, r.name) || r.display_name;
       const b = document.createElement("button");
       b.type = "button";
       b.textContent = name;
@@ -818,17 +879,18 @@ if (savedLoc?.manual) state.locStatus = "manual";
 else locate();
 
 let lastMinute = new Date().getMinutes();
-let lastDay = new Date();
+let lastDay = todayCal();
 setInterval(() => {
   const now = new Date();
   renderClock(now);
   if (now.getMinutes() === lastMinute) return;
   lastMinute = now.getMinutes();
-  if (!sameDay(now, lastDay)) {
+  const today = todayCal(); // midnight at the location, not on the device
+  if (!sameDay(today, lastDay)) {
     const wasOnToday = sameDay(state.selected, lastDay);
-    lastDay = now;
+    lastDay = today;
     if (wasOnToday) {
-      goTo(now); // follow "today" across midnight
+      goTo(today); // follow "today" across midnight
     } else {
       renderStatic();
       buildStrip();
