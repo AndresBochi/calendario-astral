@@ -38,7 +38,7 @@ const T = {
     planets: "Planetas",
     footnote: "Zodíaco tropical · posiciones geocéntricas calculadas en el dispositivo, para el día elegido a la hora actual.",
     ascending: "Asciende ↑", descending: "Desciende ↓",
-    until: "hasta el", movingNorth: "va hacia el norte", movingSouth: "va hacia el sur",
+    until: "hasta el", movingNorth: "hacia el norte", movingSouth: "hacia el sur",
     toPerigee: "Hacia el perigeo", toApogee: "Hacia el apogeo",
     untilApsis: (n, hours, perigee) =>
       `${n === 1 ? "falta" : "faltan"} ${n} ${hours ? "h" : n === 1 ? "día" : "días"} ` +
@@ -368,8 +368,8 @@ function renderSky(date) {
         { weekday: "long", day: "numeric", month: "long" }).replace(",", "")}`
       : "";
     $("moonAscent").innerHTML =
-      `${arc.ascending ? t("ascending") : t("descending")}<small>${until}</small>` +
-      `<small>${arc.movingNorth ? t("movingNorth") : t("movingSouth")}</small>`;
+      `${arc.ascending ? t("ascending") : t("descending")}` +
+      `<small>${arc.movingNorth ? t("movingNorth") : t("movingSouth")} ${until}</small>`;
   }
 
   // Moon: anomalistic — is the next apsis a perigee or an apogee?
