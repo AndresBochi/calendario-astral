@@ -40,9 +40,8 @@ const T = {
     ascending: "Asciende ↑", descending: "Desciende ↓",
     until: "hasta el", movingNorth: "hacia el norte", movingSouth: "hacia el sur",
     toPerigee: "Hacia el perigeo", toApogee: "Hacia el apogeo",
-    untilApsis: (n, hours, perigee) =>
-      `${n === 1 ? "falta" : "faltan"} ${n} ${hours ? "h" : n === 1 ? "día" : "días"} ` +
-      `para el ${perigee ? "perigeo" : "apogeo"}`,
+    untilApsis: (n, hours) =>
+      `${n === 1 ? "falta" : "faltan"} ${n} ${hours ? "h" : n === 1 ? "día" : "días"}`,
     illuminated: "iluminada",
     phases: ["Luna nueva", "Creciente", "Cuarto creciente", "Gibosa creciente",
              "Luna llena", "Gibosa menguante", "Cuarto menguante", "Menguante"],
@@ -63,8 +62,7 @@ const T = {
     ascending: "Ascending ↑", descending: "Descending ↓",
     until: "until", movingNorth: "moving north", movingSouth: "moving south",
     toPerigee: "Heading to perigee", toApogee: "Heading to apogee",
-    untilApsis: (n, hours, perigee) =>
-      `${n} ${hours ? "h" : n === 1 ? "day" : "days"} to ${perigee ? "perigee" : "apogee"}`,
+    untilApsis: (n, hours) => `${n} ${hours ? "h" : n === 1 ? "day" : "days"} left`,
     illuminated: "illuminated",
     phases: ["New Moon", "Waxing Crescent", "First Quarter", "Waxing Gibbous",
              "Full Moon", "Waning Gibbous", "Last Quarter", "Waning Crescent"],
@@ -377,8 +375,8 @@ function renderSky(date) {
   const toPerigee = apsis.kind === A.ApsisKind.Pericenter;
   const daysLeft = (apsis.time.date - date) / 86400e3;
   const left = daysLeft < 1
-    ? t("untilApsis")(Math.max(1, Math.round(daysLeft * 24)), true, toPerigee)
-    : t("untilApsis")(Math.floor(daysLeft), false, toPerigee);
+    ? t("untilApsis")(Math.max(1, Math.round(daysLeft * 24)), true)
+    : t("untilApsis")(Math.floor(daysLeft), false);
   $("moonApsis").innerHTML = `${toPerigee ? t("toPerigee") : t("toApogee")}
     <small>${left}</small>`;
 
