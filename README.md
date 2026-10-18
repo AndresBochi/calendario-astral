@@ -58,7 +58,8 @@ then open http://localhost:8080.
   location is remembered on the device. If the browser refuses location (common on iPhone,
   where Safari/Chrome website location is switched off in iOS Settings and the page is never
   asked), a panel explains how to turn it on for that device and offers a city search
-  (OpenStreetMap) instead. A city picked by hand stays until "Use my location (GPS)" is tapped. Without it, the time zone only decides which side of the moon icons is lit.
+  (OpenStreetMap) instead. The same box also takes coordinates, e.g. `-35.12, -60.49`,
+  `35.12 S, 60.49 W` or `35°07'12"S 60°29'24"W`; these work offline. A city picked by hand stays until "Use my location (GPS)" is tapped. Without it, the time zone only decides which side of the moon icons is lit.
 
 ## Next step: Android
 

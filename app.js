@@ -51,7 +51,8 @@ const T = {
     locating: "Buscando ubicación…", noLocation: "Ubicación no disponible",
     locTitle: "Tu ubicación", useLocation: "Usar mi ubicación (GPS)",
     chooseLocation: "Elegir ubicación", changeLocation: "Cambiar ubicación",
-    searchCity: "O busca tu ciudad", cityPlaceholder: "Ej.: Bragado", search: "Buscar",
+    searchCity: "O busca tu ciudad, o escribe coordenadas",
+    cityPlaceholder: "Ej.: Bragado o -35.12, -60.49", search: "Buscar",
     searching: "Buscando…", noResults: "No se encontraron lugares",
     searchFailed: "No se pudo buscar. Revisa la conexión a internet.",
     helpIosSafari: "La ubicación está bloqueada en el iPhone. Ve a Ajustes › Privacidad y seguridad › " +
@@ -83,7 +84,8 @@ const T = {
     locating: "Locating…", noLocation: "Location unavailable",
     locTitle: "Your location", useLocation: "Use my location (GPS)",
     chooseLocation: "Set location", changeLocation: "Change location",
-    searchCity: "Or search for your city", cityPlaceholder: "e.g. Bragado", search: "Search",
+    searchCity: "Or search for your city, or type coordinates",
+    cityPlaceholder: "e.g. Bragado or -35.12, -60.49", search: "Search",
     searching: "Searching…", noResults: "No places found",
     searchFailed: "Couldn't search. Check your internet connection.",
     helpIosSafari: "Location is blocked on this iPhone. Go to Settings › Privacy & Security › " +
@@ -834,18 +836,40 @@ function placeName(a = {}, fallback = "") {
 
 /* ---------- location panel: GPS or city search ---------- */
 
-function setManualLocation(lat, lon, name) {
+// `name` is empty for typed coordinates; the town is then looked up afterwards.
+function setManualLocation(lat, lon, name = "") {
   state.lat = lat;
   state.lon = lon;
   state.locStatus = "manual";
   state.place = name;
   updateZone();
   store.set("loc", JSON.stringify({ lat, lon, manual: true }));
-  store.set("place2", JSON.stringify({ lat, lon, lang: state.lang, name }));
+  if (name) store.set("place2", JSON.stringify({ lat, lon, lang: state.lang, name }));
   $("locPanel").hidden = true;
   $("cityResults").replaceChildren();
   $("cityInput").value = "";
   renderAll();
+  if (!name) lookupPlace();
+}
+
+/* Coordinates typed by hand: "-35.12, -60.49", "35.12 S, 60.49 W" (O = oeste),
+   or degrees/minutes/seconds like 35°07'12"S 60°29'24"W. Latitude first,
+   unless the letters say otherwise. Returns null when the text isn't coordinates. */
+function parseCoords(text) {
+  const part = String.raw`([-+]?\d+(?:[.,]\d+)?)\s*°?\s*(?:(\d+(?:[.,]\d+)?)\s*['′’]\s*)?` +
+    String.raw`(?:(\d+(?:[.,]\d+)?)\s*(?:["″”]|'')\s*)?([NSEWO])?`;
+  const m = text.trim().match(new RegExp(`^${part}\\s*[,;\\s]\\s*${part}$`, "i"));
+  if (!m) return null;
+  const value = (deg, min, sec, letter) => {
+    const num = (x) => Number((x || "0").replace(",", "."));
+    let v = Math.abs(num(deg)) + num(min) / 60 + num(sec) / 3600;
+    if (deg.startsWith("-") || /[SWO]/i.test(letter || "")) v = -v;
+    return v;
+  };
+  let lat = value(m[1], m[2], m[3], m[4]);
+  let lon = value(m[5], m[6], m[7], m[8]);
+  if (/[EWO]/i.test(m[4] || "") || /[NS]/i.test(m[8] || "")) [lat, lon] = [lon, lat];
+  return Math.abs(lat) <= 90 && Math.abs(lon) <= 180 ? { lat, lon } : null;
 }
 
 function showCityMessage(text) {
@@ -860,6 +884,11 @@ $("citySearch").addEventListener("submit", async (e) => {
   e.preventDefault();
   const q = $("cityInput").value.trim();
   if (!q) return;
+  const coords = parseCoords(q);
+  if (coords) {
+    setManualLocation(coords.lat, coords.lon);
+    return;
+  }
   showCityMessage(t("searching"));
   try {
     const res = await fetch("https://nominatim.openstreetmap.org/search?format=jsonv2" +
