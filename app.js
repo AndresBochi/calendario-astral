@@ -41,6 +41,9 @@ const T = {
     movingNorth: "va hacia el norte", movingSouth: "va hacia el sur",
     culminates: "culmina a", assumedNorth: "hemisferio norte (sin ubicación)",
     southByTz: "hemisferio sur (por zona horaria)", northByTz: "hemisferio norte (por zona horaria)",    toPerigee: "Hacia el perigeo", toApogee: "Hacia el apogeo",
+    untilApsis: (n, hours, perigee) =>
+      `${n === 1 ? "falta" : "faltan"} ${n} ${hours ? "h" : n === 1 ? "día" : "días"} ` +
+      `para el ${perigee ? "perigeo" : "apogeo"}`,
     illuminated: "iluminada",
     phases: ["Luna nueva", "Creciente", "Cuarto creciente", "Gibosa creciente",
              "Luna llena", "Gibosa menguante", "Cuarto menguante", "Menguante"],
@@ -60,6 +63,8 @@ const T = {
     movingNorth: "moving north", movingSouth: "moving south",
     culminates: "peaks at", assumedNorth: "northern hemisphere (no location)",
     southByTz: "southern hemisphere (from time zone)", northByTz: "northern hemisphere (from time zone)",    toPerigee: "Heading to perigee", toApogee: "Heading to apogee",
+    untilApsis: (n, hours, perigee) =>
+      `${n} ${hours ? "h" : n === 1 ? "day" : "days"} to ${perigee ? "perigee" : "apogee"}`,
     illuminated: "illuminated",
     phases: ["New Moon", "Waxing Crescent", "First Quarter", "Waxing Gibbous",
              "Full Moon", "Waning Gibbous", "Last Quarter", "Waning Crescent"],
@@ -338,9 +343,12 @@ function renderSky(date) {
   // Moon: anomalistic — is the next apsis a perigee or an apogee?
   const apsis = A.SearchLunarApsis(date);
   const toPerigee = apsis.kind === A.ApsisKind.Pericenter;
-  const distKm = A.GeoMoon(date).Length() * A.KM_PER_AU;
+  const daysLeft = (apsis.time.date - date) / 86400e3;
+  const left = daysLeft < 1
+    ? t("untilApsis")(Math.max(1, Math.round(daysLeft * 24)), true, toPerigee)
+    : t("untilApsis")(Math.floor(daysLeft), false, toPerigee);
   $("moonApsis").innerHTML = `${toPerigee ? t("toPerigee") : t("toApogee")}
-    <small>${Math.round(distKm).toLocaleString(locale())} km</small>`;
+    <small>${left}</small>`;
 
   // Planets (compact)
   const later = new Date(date.getTime() + 86400e3);
