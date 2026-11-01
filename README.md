@@ -57,6 +57,9 @@ The row of days under the date, each with a small drawing of that day's Moon pha
 | **Salida del sol** (Sunrise) | 06:15 | When the Sun rises at the selected place on the selected day, in local time. |
 | **Puesta del sol** (Sunset) | 19:19 | When it sets. Near the poles, "no ocurre este día" (none this day) means the Sun doesn't rise or doesn't set that day. |
 | *gray line under sunset* | 13 h 04 min sobre el horizonte | Hours of daylight: the total time the Sun is above the horizon that day, from local midnight to midnight. |
+| **Acimut (ahora)** (Azimuth, now) | 258.5° O | The compass direction of the Sun right now, in degrees clockwise from true north (0° N, 90° E, 180° S, 270° W), with the nearest of the 8 compass points (O = oeste, west). |
+| **Altura (ahora)** (Altitude, now) | 9.3° | How high the Sun is above the horizon right now: 0° on the horizon, 90° straight overhead. Negative means it is below the horizon ("bajo el horizonte"). Includes the bending of light by the atmosphere, so it matches what you see. |
+| **Altura máxima del día** (Highest altitude of the day) | 69.5° a las 12:45 | The highest the Sun gets that day and when (solar noon). Higher in summer, lower in winter. |
 
 ### Luna (Moon)
 
@@ -70,6 +73,9 @@ The row of days under the date, each with a small drawing of that day's Moon pha
 | **Salida de la luna** (Moonrise) | 11:42 | When the Moon rises at the selected place that day, in local time. |
 | **Puesta de la luna** (Moonset) | 01:48 | When it sets. The Moon rises about 50 minutes later each day, so about once a month there's a day with no moonrise or no moonset; the row then says "no ocurre este día" (none this day). A moonset can come before the moonrise on the same day: that's the Moon that rose the day before. |
 | *gray line under moonset* | 14 h 10 min sobre el horizonte | The total time the Moon is above the horizon that day, from local midnight to midnight. When it sets in the early morning and rises again later, both stretches are added (e.g. 00:00–01:59 plus 11:49–24:00). |
+| **Acimut (ahora)** (Azimuth, now) | 202.9° SO | The Moon's compass direction right now, like the Sun's row. |
+| **Altura (ahora)** (Altitude, now) | -73.0° bajo el horizonte | How high the Moon is above the horizon right now; negative when it is below it. |
+| **Altura máxima del día** (Highest altitude of the day) | 32.6° a las 06:43 | The highest the Moon gets that day and when. It is the same "culmination" used for [ascending and descending](#ascending-and-descending-moon): these heights growing day by day means an ascending Moon. About once a month the Moon doesn't culminate on a given day; then this is the highest it is at either end of the day. |
 
 #### Ascending and descending Moon
 

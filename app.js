@@ -48,6 +48,9 @@ const T = {
     sunrise: "Salida del sol", sunset: "Puesta del sol",
     moonrise: "Salida de la luna", moonset: "Puesta de la luna",
     noEvent: "no ocurre este día", needsLocation: "requiere ubicación",
+    azimuth: "Acimut (ahora)", altitude: "Altura (ahora)", maxAltitude: "Altura máxima del día",
+    compass: ["N", "NE", "E", "SE", "S", "SO", "O", "NO"],
+    belowHorizon: "bajo el horizonte", atTime: "a las",
     aboveHorizon: (ms) => {
       const min = Math.round(ms / 60000);
       return `${Math.floor(min / 60)} h ${pad(min % 60)} min sobre el horizonte`;
@@ -85,6 +88,9 @@ const T = {
     sunrise: "Sunrise", sunset: "Sunset",
     moonrise: "Moonrise", moonset: "Moonset",
     noEvent: "none this day", needsLocation: "needs location",
+    azimuth: "Azimuth (now)", altitude: "Altitude (now)", maxAltitude: "Highest altitude of the day",
+    compass: ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
+    belowHorizon: "below the horizon", atTime: "at",
     aboveHorizon: (ms) => {
       const min = Math.round(ms / 60000);
       return `${Math.floor(min / 60)} h ${pad(min % 60)} min above the horizon`;
@@ -392,6 +398,52 @@ function timeAboveHorizon(body, day) {
   return total;
 }
 
+/* Where the body is in the observer's sky at this moment: azimuth measured
+   clockwise from true north (90° = east), and altitude above the horizon
+   (negative = below it), including atmospheric refraction, as the eye sees it. */
+function horizontalAt(body, date) {
+  const obs = new A.Observer(state.lat, state.lon, 0);
+  const eq = A.Equator(body, date, obs, true, true);
+  const hor = A.Horizon(date, obs, eq.ra, eq.dec, "normal");
+  return { az: hor.azimuth, alt: hor.altitude };
+}
+
+/* The highest the body gets during the calendar day at the location (local
+   midnight to midnight). That is its culmination (crossing the meridian), or,
+   when it doesn't culminate that day (about once a month for the Moon), the
+   higher of the day's two ends. */
+function maxAltitudeOn(body, day) {
+  const obs = new A.Observer(state.lat, state.lon, 0);
+  const start = instantAt(day);
+  const end = instantAt(addDays(day, 1));
+  const candidates = [start, new Date(end - 1000)].map((d) => ({ date: d, alt: horizontalAt(body, d).alt }));
+  let from = start;
+  for (let i = 0; i < 3; i++) {
+    const c = A.SearchHourAngle(body, obs, 0, from, +1);
+    if (c.time.date >= end) break;
+    candidates.push({ date: c.time.date, alt: horizontalAt(body, c.time.date).alt });
+    from = c.time.AddDays(0.01).date;
+  }
+  return candidates.reduce((a, b) => (b.alt > a.alt ? b : a));
+}
+
+const fmtTime = (d) =>
+  d.toLocaleTimeString(locale(), { timeZone: state.tz, hour: "2-digit", minute: "2-digit", hour12: false });
+
+function renderAltAz(body, date, day, azId, altId, maxId) {
+  if (state.lat === null) {
+    $(azId).textContent = $(altId).textContent = $(maxId).textContent = t("needsLocation");
+    return;
+  }
+  const { az, alt } = horizontalAt(body, date);
+  $(azId).textContent = `${az.toFixed(1)}° ${t("compass")[Math.round(az / 45) % 8]}`;
+  $(altId).textContent = `${alt.toFixed(1)}°`;
+  if (alt < 0) $(altId).append(Object.assign(document.createElement("small"), { textContent: t("belowHorizon") }));
+  const max = maxAltitudeOn(body, day);
+  $(maxId).textContent = `${max.alt.toFixed(1)}°`;
+  $(maxId).append(Object.assign(document.createElement("small"), { textContent: `${t("atTime")} ${fmtTime(max.date)}` }));
+}
+
 function phaseIndex(angle) {
   return Math.floor(norm(angle + 22.5) / 45) % 8;
 }
@@ -516,6 +568,7 @@ function renderSky(date) {
   $("sunDeg").textContent = fmtDeg(sun.deg);
   $("sunTotal").textContent = `${sunLon.toFixed(2)}°`;
   renderRiseSet("Sun", state.selected, "sunRise", "sunSet");
+  renderAltAz("Sun", date, state.selected, "sunAz", "sunAlt", "sunMax");
 
   // Moon: phase + illumination
   const angle = A.MoonPhase(date);
@@ -531,6 +584,7 @@ function renderSky(date) {
     `${glyph(moon.sign.g)} ${moon.sign[state.lang]} ${fmtDeg(moon.deg)}`;
   $("moonTotal").textContent = `${norm(moonLon).toFixed(2)}°`;
   renderRiseSet("Moon", state.selected, "moonRise", "moonSet");
+  renderAltAz("Moon", date, state.selected, "moonAz", "moonAlt", "moonMax");
 
   // Moon: ascending/descending, from the observer's exact spot.
   if (state.lat === null) {
