@@ -870,28 +870,33 @@ function setFixedTime(fixed) {
   renderClock(new Date());
 }
 
+// Hour and minute dropdowns, always 24 h (the browser's time field follows the
+// device's AM/PM setting).
+const fillOptions = (select, count) =>
+  select.replaceChildren(...Array.from({ length: count }, (_, i) => new Option(pad(i), i)));
+fillOptions($("pickHour"), 24);
+fillOptions($("pickMinute"), 60);
+
 $("clock").addEventListener("click", () => {
-  const picker = $("timePick");
   const z = state.fixedTime ?? zoned(new Date());
-  picker.value = `${pad(z.h)}:${pad(z.mi)}`;
+  $("pickHour").value = z.h;
+  $("pickMinute").value = z.mi;
   $("clock").hidden = true;
-  picker.hidden = false;
-  picker.focus();
-  try {
-    picker.showPicker();
-  } catch {}
+  $("timePick").hidden = false;
+  $("pickHour").focus();
 });
 
-$("timePick").addEventListener("change", (e) => {
-  const [h, mi] = e.target.value.split(":").map(Number);
-  if (Number.isFinite(h) && Number.isFinite(mi)) setFixedTime({ h, mi });
+$("timePick").addEventListener("change", () => {
+  setFixedTime({ h: Number($("pickHour").value), mi: Number($("pickMinute").value) });
 });
 
 $("timePick").addEventListener("keydown", (e) => {
-  if (e.key === "Enter" || e.key === "Escape") e.target.blur();
+  if (e.key === "Enter" || e.key === "Escape") document.activeElement.blur();
 });
 
-$("timePick").addEventListener("blur", () => {
+// Close once focus leaves both dropdowns.
+$("timePick").addEventListener("focusout", (e) => {
+  if ($("timePick").contains(e.relatedTarget)) return;
   $("timePick").hidden = true;
   $("clock").hidden = false;
 });

@@ -206,15 +206,21 @@ button { font: inherit; color: inherit; }
 .clock.is-set { color: var(--accent); }
 .clock[hidden], .time-pick[hidden], .now-btn[hidden] { display: none; }
 .time-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 600;
+  font-size: 1.5rem;
+}
+.time-pick select {
   height: 2.6rem;
-  padding: 0 8px;
+  padding: 0 6px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--paper);
   color: var(--ink);
-  font-family: "Fraunces", Georgia, serif;
-  font-weight: 600;
-  font-size: 1.5rem;
+  font: inherit;
   font-variant-numeric: tabular-nums;
 }
 .now-btn { display: block; margin: 4px 0 0 auto; }

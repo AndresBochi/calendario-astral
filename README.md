@@ -31,7 +31,7 @@ place**, or at a time you pick (see **Hora** below). Today and your own location
   any date with a calendar.
 - **Hora** (Time): the current time **at the selected place**. If you pick a city in another
   country, it shows that city's time, and "today" can be a different date there.
-  Tap the time to pick another hour: the clock stops there, turns the accent colour, and the
+  Tap the time to pick another hour (24 h, with hour and minute dropdowns): the clock stops there, turns the accent colour, and the
   whole page shows the sky at that time on the selected day (the "(ahora)" rows become "(a esa
   hora)"). It stays on that hour as you change days. **Volver a la hora actual** (Back to current
   time), under the clock, starts it again.
