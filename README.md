@@ -24,6 +24,9 @@ place**, or at a time you pick (see **Hora** below). Today and your own location
   exist in the new month, it moves to the month's last day (31 Jan → 28/29 Feb).
 - **Hoy** (Today): appears when you are on another day; takes you back to today.
 - **EN / ES**: language. **☾ / ☀**: dark or light theme. Both are remembered on your device.
+- **Two-colour dot**: opens the colour panel. **Primario** (Primary) colours the header, buttons
+  and highlights; **Secundario** (Secondary) colours the Sun and zodiac symbols. Your colours
+  apply in both themes and are remembered; **Restaurar colores** goes back to the theme's own.
 
 ### Date and place
 

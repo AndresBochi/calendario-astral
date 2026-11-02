@@ -132,6 +132,15 @@ button { font: inherit; color: inherit; }
 }
 .chip:hover { background: rgba(255,255,255,.26); }
 .chip[hidden] { display: none; }
+/* Palette chip: primary and secondary colour, half each. */
+.swatch {
+  display: inline-block;
+  width: 14px; height: 14px;
+  vertical-align: -2px;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent-ink);
+  background: linear-gradient(90deg, var(--accent) 50%, var(--sun) 50%);
+}
 
 /* selected day block */
 /* Location sits under the clock, beside the date. When the place name can't fit
@@ -258,6 +267,21 @@ button { font: inherit; color: inherit; }
 .loc-panel[hidden] { display: none; }
 .loc-panel .loc-btn { margin-top: 0; justify-self: start; font-size: .8rem; padding: 6px 14px; }
 .loc-panel-head { display: flex; align-items: center; justify-content: space-between; }
+.color-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: .85rem;
+  cursor: pointer;
+}
+.color-row input {
+  width: 44px; height: 32px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  cursor: pointer;
+}
 .loc-panel h3 {
   margin: 0;
   font-size: .7rem;

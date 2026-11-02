@@ -73,6 +73,8 @@ const T = {
     helpOther: "La ubicación está bloqueada. Permítela desde el icono junto a la dirección y " +
       "recarga la página, o busca tu ciudad abajo.",
     themeDark: "Tema oscuro", themeLight: "Tema claro",
+    colorsTitle: "Colores", primaryColor: "Primario (encabezado, botones, resaltados)",
+    secondaryColor: "Secundario (símbolos del sol y los signos)", resetColors: "Restaurar colores",
   },
   en: {
     time: "Time", sun: "Sun", moon: "Moon", sign: "Sign", today: "Today",
@@ -115,6 +117,8 @@ const T = {
     helpOther: "Location is blocked. Allow it from the icon next to the address bar and reload " +
       "the page, or search for your city below.",
     themeDark: "Dark theme", themeLight: "Light theme",
+    colorsTitle: "Colours", primaryColor: "Primary (header, buttons, highlights)",
+    secondaryColor: "Secondary (Sun and sign symbols)", resetColors: "Restore colours",
   },
 };
 
@@ -224,6 +228,13 @@ const state = {
   tz: tzFor(savedLoc?.lat, savedLoc?.lon),
   selected: null,
   fixedTime: null, // { h, mi } when the person picks a time; null follows the clock
+  colors: (() => { // { primary, secondary } picked by the person; missing = the theme's own
+    try {
+      return JSON.parse(store.get("colors")) || {};
+    } catch {
+      return {};
+    }
+  })(),
 };
 state.selected = todayCal();
 
@@ -486,9 +497,31 @@ function renderStatic() {
   const dark = state.theme === "dark";
   $("themeBtn").textContent = dark ? "☀︎" : "☾︎";
   $("themeBtn").title = dark ? t("themeLight") : t("themeDark");
+  $("colorBtn").title = t("colorsTitle");
   $("todayBtn").hidden = sameDay(state.selected, todayCal());
-  document.querySelector('meta[name="theme-color"]').content = dark ? "#7b6cf0" : "#b23a2e";
+  applyColors();
   $("cityInput").placeholder = t("cityPlaceholder");
+}
+
+/* Picked colours override the theme's, in both light and dark. Text on the
+   primary colour turns dark when the colour is light, so it stays readable. */
+function applyColors() {
+  const root = document.documentElement.style;
+  const { primary, secondary } = state.colors;
+  if (primary) {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(primary.slice(i, i + 2), 16));
+    root.setProperty("--accent", primary);
+    root.setProperty("--accent-ink", 0.299 * r + 0.587 * g + 0.114 * b > 160 ? "#1d1a17" : "#ffffff");
+  } else {
+    root.removeProperty("--accent");
+    root.removeProperty("--accent-ink");
+  }
+  if (secondary) root.setProperty("--sun", secondary);
+  else root.removeProperty("--sun");
+  const css = getComputedStyle(document.documentElement);
+  document.querySelector('meta[name="theme-color"]').content = css.getPropertyValue("--accent").trim();
+  $("primaryPick").value = css.getPropertyValue("--accent").trim();
+  $("secondaryPick").value = css.getPropertyValue("--sun").trim();
 }
 
 function renderDate() {
@@ -847,6 +880,27 @@ $("themeBtn").addEventListener("click", () => {
   state.theme = state.theme === "dark" ? "light" : "dark";
   store.set("theme", state.theme);
   renderStatic();
+});
+
+$("colorBtn").addEventListener("click", () => {
+  $("colorPanel").hidden = !$("colorPanel").hidden;
+});
+$("colorClose").addEventListener("click", () => {
+  $("colorPanel").hidden = true;
+});
+
+const pickColor = (key) => (e) => {
+  state.colors[key] = e.target.value;
+  store.set("colors", JSON.stringify(state.colors));
+  applyColors();
+};
+$("primaryPick").addEventListener("input", pickColor("primary"));
+$("secondaryPick").addEventListener("input", pickColor("secondary"));
+
+$("colorReset").addEventListener("click", () => {
+  state.colors = {};
+  store.set("colors", "{}");
+  applyColors();
 });
 
 $("langBtn").addEventListener("click", () => {
