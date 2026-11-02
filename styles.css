@@ -282,6 +282,18 @@ button { font: inherit; color: inherit; }
   background: var(--paper);
   cursor: pointer;
 }
+.install-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 8px 18px;
+  background: var(--paper-2);
+  border-bottom: 1px dashed var(--line);
+  font-size: .85rem;
+}
+.install-bar[hidden] { display: none; }
+.install-bar span { flex: 1; }
+.install-bar .loc-btn { margin-top: 0; font-size: .8rem; padding: 6px 14px; }
 .loc-panel h3 {
   margin: 0;
   font-size: .7rem;

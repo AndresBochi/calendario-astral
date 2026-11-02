@@ -7,8 +7,8 @@ set times.
 **Open it:** https://andresbochi.github.io/calendario-astral/ (works in Chrome, Safari, Edge and
 Firefox, on phones and computers).
 
-**Install it on Android:** open the link in Chrome, then tap **Install** when Chrome offers it, or
-**⋮ → Install app** (on some phones, **Add to Home screen → Install**). It gets its own icon,
+**Install it on Android:** open the link in Chrome, then tap **Instalar** (Install) in the bar
+under the header, or use Chrome's **⋮ → Install app** (on some phones, **Add to Home screen → Install**). It gets its own icon,
 opens full screen without the browser bar, and works offline after the first visit (only the town
 name and the town search need internet). Your location is checked again each time you open the app or come back
 to it, unless you picked a city by hand.

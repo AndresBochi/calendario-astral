@@ -73,6 +73,7 @@ const T = {
     helpOther: "La ubicación está bloqueada. Permítela desde el icono junto a la dirección y " +
       "recarga la página, o busca tu ciudad abajo.",
     themeDark: "Tema oscuro", themeLight: "Tema claro",
+    installText: "Instala Calendario Astral en tu teléfono", install: "Instalar",
     colorsTitle: "Colores", primaryColor: "Primario (encabezado, botones, resaltados)",
     secondaryColor: "Secundario (símbolos del sol y los signos)", resetColors: "Restaurar colores",
   },
@@ -117,6 +118,7 @@ const T = {
     helpOther: "Location is blocked. Allow it from the icon next to the address bar and reload " +
       "the page, or search for your city below.",
     themeDark: "Dark theme", themeLight: "Light theme",
+    installText: "Install Calendario Astral on your phone", install: "Install",
     colorsTitle: "Colours", primaryColor: "Primary (header, buttons, highlights)",
     secondaryColor: "Secondary (Sun and sign symbols)", resetColors: "Restore colours",
   },
@@ -1140,6 +1142,30 @@ if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catc
 // A city picked by hand stays until the person asks for GPS again.
 if (savedLoc?.manual) state.locStatus = "manual";
 else locate();
+
+/* Install bar: shown only when the browser says the app can be installed (Chrome
+   and Edge on Android and computers; never once installed). × hides it until the
+   next visit. */
+let installPrompt = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault(); // use our bar instead of Chrome's own pop-up
+  installPrompt = e;
+  $("installBar").hidden = false;
+});
+$("installBtn").addEventListener("click", async () => {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  await installPrompt.userChoice;
+  installPrompt = null;
+  $("installBar").hidden = true;
+});
+$("installClose").addEventListener("click", () => {
+  $("installBar").hidden = true;
+});
+window.addEventListener("appinstalled", () => {
+  installPrompt = null;
+  $("installBar").hidden = true;
+});
 
 // Coming back to the app (it may have moved with the phone): check GPS again.
 document.addEventListener("visibilitychange", () => {
