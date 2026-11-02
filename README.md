@@ -5,8 +5,13 @@ zodiac, the Moon's phase, its ascending and descending periods, its distance cyc
 set times.
 
 **Open it:** https://andresbochi.github.io/calendario-astral/ (works in Chrome, Safari, Edge and
-Firefox, on phones and computers). On Android you can use Chrome's **⋮ → Add to Home screen** to
-open it like an app.
+Firefox, on phones and computers).
+
+**Install it on Android:** open the link in Chrome, then tap **Install** when Chrome offers it, or
+**⋮ → Install app** (on some phones, **Add to Home screen → Install**). It gets its own icon,
+opens full screen without the browser bar, and works offline after the first visit (only the town
+name and the town search need internet). Your location is checked again each time you open the app or come back
+to it, unless you picked a city by hand.
 
 The app is in Spanish by default; the **EN / ES** button switches language. Below, each item is
 listed with its Spanish label and, in brackets, its English label.
@@ -221,7 +226,13 @@ git commit -m "Describe the change"
 git push
 ```
 
-### Next step: Android
+### Installable app
 
-Wrap this folder with [Capacitor](https://capacitorjs.com/) (`npx cap add android`) to get an
-Android app without rewriting it.
+`manifest.webmanifest` and `sw.js` make it an installable web app (PWA). The service worker
+caches the page and every local file it links to, fetches them fresh when online and falls back to
+the cache offline. The icons in `icons/` (a cream crescent Moon and a gold star on the header
+red) are drawn by `tools/make_icons.py`, with no dependencies: `python tools/make_icons.py icons`.
+
+To publish it on Google Play later, wrap the site with
+[Bubblewrap](https://github.com/GoogleChromeLabs/bubblewrap) (a Trusted Web Activity) or
+[Capacitor](https://capacitorjs.com/).

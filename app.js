@@ -1135,9 +1135,16 @@ $("locClose").addEventListener("click", () => {
 
 renderAll();
 lookupPlace();
+// Installable app (Android: Chrome ⋮ → Install app) that also opens offline.
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 // A city picked by hand stays until the person asks for GPS again.
 if (savedLoc?.manual) state.locStatus = "manual";
 else locate();
+
+// Coming back to the app (it may have moved with the phone): check GPS again.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && state.locStatus !== "manual") locate();
+});
 
 let lastMinute = new Date().getMinutes();
 let lastDay = todayCal();
