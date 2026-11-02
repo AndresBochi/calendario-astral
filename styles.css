@@ -191,11 +191,33 @@ button { font: inherit; color: inherit; }
   color: var(--ink-soft);
 }
 .clock {
+  padding: 0;
+  border: 0;
+  border-bottom: 1px dashed transparent;
+  background: transparent;
+  color: inherit;
   font-family: "Fraunces", Georgia, serif;
   font-weight: 600;
   font-size: 2rem;
   font-variant-numeric: tabular-nums;
+  cursor: pointer;
 }
+.clock:hover { border-bottom-color: var(--ink-soft); }
+.clock.is-set { color: var(--accent); }
+.clock[hidden], .time-pick[hidden], .now-btn[hidden] { display: none; }
+.time-pick {
+  height: 2.6rem;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 600;
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+.now-btn { display: block; margin: 4px 0 0 auto; }
 .loc {
   grid-area: loc;
   align-self: start;

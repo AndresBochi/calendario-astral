@@ -7,7 +7,7 @@
   <title>Calendario Astral</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Inter:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="styles.css?v=24">
+  <link rel="stylesheet" href="styles.css?v=25">
 </head>
 <body>
   <main class="page">
@@ -48,7 +48,9 @@
       </div>
       <div class="today-time">
         <div class="label" data-i18n="time"></div>
-        <div id="clock" class="clock"></div>
+        <button id="clock" class="clock" type="button"></button>
+        <input id="timePick" class="time-pick" type="time" step="60" hidden>
+        <button id="nowBtn" class="loc-btn now-btn" type="button" data-i18n="resumeNow" hidden></button>
       </div>
       <div id="location" class="loc"></div>
     </section>
@@ -129,6 +131,6 @@
 
   <script src="vendor/astronomy.browser.min.js?v=2.1.19"></script>
   <script src="vendor/tz-lookup.js?v=11.7.0"></script>
-  <script src="app.js?v=24"></script>
+  <script src="app.js?v=25"></script>
 </body>
 </html>

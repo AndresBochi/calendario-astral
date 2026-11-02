@@ -16,7 +16,7 @@ listed with its Spanish label and, in brackets, its English label.
 ## How to read the page
 
 Everything on the page is for **the selected day, at the current local time of the selected
-place**. Today and your own location are selected when you open it.
+place**, or at a time you pick (see **Hora** below). Today and your own location are selected when you open it.
 
 ### Header
 
@@ -31,6 +31,10 @@ place**. Today and your own location are selected when you open it.
   any date with a calendar.
 - **Hora** (Time): the current time **at the selected place**. If you pick a city in another
   country, it shows that city's time, and "today" can be a different date there.
+  Tap the time to pick another hour: the clock stops there, turns the accent colour, and the
+  whole page shows the sky at that time on the selected day (the "(ahora)" rows become "(a esa
+  hora)"). It stays on that hour as you change days. **Volver a la hora actual** (Back to current
+  time), under the clock, starts it again.
 - **Location lines**: the coordinates (e.g. `35.12° S, 60.49° W`) and the town, province and
   country (e.g. `Bragado, Buenos Aires, Argentina`). The town name needs internet; the rest
   doesn't.

@@ -49,6 +49,8 @@ const T = {
     moonrise: "Salida de la luna", moonset: "Puesta de la luna",
     noEvent: "no ocurre este día", needsLocation: "requiere ubicación",
     azimuth: "Acimut (ahora)", altitude: "Altura (ahora)", maxAltitude: "Altura máxima del día",
+    azimuthSet: "Acimut (a esa hora)", altitudeSet: "Altura (a esa hora)",
+    timeSet: "Hora elegida", resumeNow: "Volver a la hora actual", setTime: "Elegir hora",
     compass: ["N", "NE", "E", "SE", "S", "SO", "O", "NO"],
     belowHorizon: "bajo el horizonte", atTime: "a las",
     aboveHorizon: (ms) => {
@@ -89,6 +91,8 @@ const T = {
     moonrise: "Moonrise", moonset: "Moonset",
     noEvent: "none this day", needsLocation: "needs location",
     azimuth: "Azimuth (now)", altitude: "Altitude (now)", maxAltitude: "Highest altitude of the day",
+    azimuthSet: "Azimuth (at that time)", altitudeSet: "Altitude (at that time)",
+    timeSet: "Chosen time", resumeNow: "Back to current time", setTime: "Set time",
     compass: ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
     belowHorizon: "below the horizon", atTime: "at",
     aboveHorizon: (ms) => {
@@ -219,6 +223,7 @@ const state = {
   place: "",
   tz: tzFor(savedLoc?.lat, savedLoc?.lon),
   selected: null,
+  fixedTime: null, // { h, mi } when the person picks a time; null follows the clock
 };
 state.selected = todayCal();
 
@@ -230,8 +235,10 @@ function updateZone() {
   if (wasToday) state.selected = todayCal();
 }
 
-// The sky is shown for the selected day at the location's current time.
+// The sky is shown for the selected day at the chosen time, or else at the
+// location's current time.
 function viewDate(now) {
+  if (state.fixedTime) return instantAt(state.selected, state.fixedTime.h, state.fixedTime.mi);
   const z = zoned(now);
   return instantAt(state.selected, z.h, z.mi, z.s);
 }
@@ -467,9 +474,14 @@ function moonSVG(fraction, waxing, size) {
 function renderStatic() {
   document.documentElement.lang = state.lang;
   document.documentElement.dataset.theme = state.theme;
+  // Keys with a "…Set" variant (azimuth, altitude, time) switch to it while a time is chosen.
   document.querySelectorAll("[data-i18n]").forEach((el) => {
-    el.textContent = t(el.dataset.i18n);
+    const key = el.dataset.i18n;
+    el.textContent = t(state.fixedTime && T[state.lang][`${key}Set`] ? `${key}Set` : key);
   });
+  $("clock").title = t("setTime");
+  $("clock").classList.toggle("is-set", Boolean(state.fixedTime));
+  $("nowBtn").hidden = !state.fixedTime;
   $("langBtn").textContent = state.lang === "es" ? "EN" : "ES";
   const dark = state.theme === "dark";
   $("themeBtn").textContent = dark ? "☀︎" : "☾︎";
@@ -489,8 +501,12 @@ function renderDate() {
   $("dmy").textContent = `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`;
 }
 
-// The location's local time.
+// The location's local time, or the chosen time, which stays put.
 function renderClock(now) {
+  if (state.fixedTime) {
+    $("clock").textContent = `${pad(state.fixedTime.h)}:${pad(state.fixedTime.mi)}`;
+    return;
+  }
   $("clock").textContent = now.toLocaleTimeString(locale(), {
     timeZone: state.tz, hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
   });
@@ -846,6 +862,42 @@ $("nextMonth").addEventListener("click", () => goTo(shiftMonths(state.selected, 
 $("prevYear").addEventListener("click", () => goTo(shiftMonths(state.selected, -12)));
 $("nextYear").addEventListener("click", () => goTo(shiftMonths(state.selected, 12)));
 
+/* Picking a time stops the clock there and shows the sky at that time; the
+   button below it goes back to following the current time. */
+function setFixedTime(fixed) {
+  state.fixedTime = fixed;
+  renderSelection();
+  renderClock(new Date());
+}
+
+$("clock").addEventListener("click", () => {
+  const picker = $("timePick");
+  const z = state.fixedTime ?? zoned(new Date());
+  picker.value = `${pad(z.h)}:${pad(z.mi)}`;
+  $("clock").hidden = true;
+  picker.hidden = false;
+  picker.focus();
+  try {
+    picker.showPicker();
+  } catch {}
+});
+
+$("timePick").addEventListener("change", (e) => {
+  const [h, mi] = e.target.value.split(":").map(Number);
+  if (Number.isFinite(h) && Number.isFinite(mi)) setFixedTime({ h, mi });
+});
+
+$("timePick").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === "Escape") e.target.blur();
+});
+
+$("timePick").addEventListener("blur", () => {
+  $("timePick").hidden = true;
+  $("clock").hidden = false;
+});
+
+$("nowBtn").addEventListener("click", () => setFixedTime(null));
+
 $("dmyBtn").addEventListener("click", () => {
   const picker = $("datePick");
   picker.value = isoDate(state.selected);
@@ -1032,7 +1084,7 @@ let lastMinute = new Date().getMinutes();
 let lastDay = todayCal();
 setInterval(() => {
   const now = new Date();
-  renderClock(now);
+  if (!state.fixedTime) renderClock(now);
   if (now.getMinutes() === lastMinute) return;
   lastMinute = now.getMinutes();
   const today = todayCal(); // midnight at the location, not on the device
@@ -1046,5 +1098,5 @@ setInterval(() => {
       buildStrip();
     }
   }
-  renderSky(viewDate(now));
+  if (!state.fixedTime) renderSky(viewDate(now));
 }, 1000);
