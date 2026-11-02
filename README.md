@@ -29,9 +29,17 @@ place**, or at a time you pick (see **Hora** below). Today and your own location
   exist in the new month, it moves to the month's last day (31 Jan → 28/29 Feb).
 - **Hoy** (Today): appears when you are on another day; takes you back to today.
 - **EN / ES**: language. **☾ / ☀**: dark or light theme. Both are remembered on your device.
-- **Two-colour dot**: opens the colour panel. **Primario** (Primary) colours the header, buttons
-  and highlights; **Secundario** (Secondary) colours the Sun and zodiac symbols. Your colours
-  apply in both themes and are remembered; **Restaurar colores** goes back to the theme's own.
+- **Two-colour dot**: opens the **Personalizar** (Customize) panel.
+  - **Colores** (Colours): **Primario** (Primary) colours the header, buttons and highlights;
+    **Secundario** (Secondary) colours the Sun and zodiac symbols. Your colours apply in both
+    themes and are remembered; **Restaurar colores** goes back to the theme's own.
+  - **Diseño** (Layout): the page is made of five modules (date & place, days, Sun, Moon,
+    planets) on a grid. **Columnas** (Columns) sets 1, 2 or 3 columns; the app widens to use
+    them when the window is big enough (a phone always shows one). **Mover módulos** (Move
+    modules) puts a bar on each module: drag it by **⠿**, or use **◀ ▶** (**▲ ▼** in one column)
+    to move it, **− / +** to make it narrower or wider, and **Ocultar** (Hide) to hide it. Tap
+    **Listo** (Done) to finish. The layout is remembered; **Restaurar diseño** goes back to the
+    default.
 
 ### Date and place
 

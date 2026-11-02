@@ -74,6 +74,11 @@ const T = {
       "recarga la página, o busca tu ciudad abajo.",
     themeDark: "Tema oscuro", themeLight: "Tema claro",
     installText: "Instala Calendario Astral en tu teléfono", install: "Instalar",
+    customize: "Personalizar", layoutTitle: "Diseño", columns: "Columnas",
+    colsNote: (n) => `La ventana solo tiene lugar para ${n} ${n === 1 ? "columna" : "columnas"}; se usan más al agrandarla.`,
+    editLayout: "Mover módulos", resetLayout: "Restaurar diseño", done: "Listo",
+    modToday: "Fecha y lugar", modDays: "Días", moveEarlier: "Mover antes", moveLater: "Mover después",
+    narrower: "Más angosto", wider: "Más ancho", hideMod: "Ocultar", showMod: "Mostrar",
     colorsTitle: "Colores", primaryColor: "Primario (encabezado, botones, resaltados)",
     secondaryColor: "Secundario (símbolos del sol y los signos)", resetColors: "Restaurar colores",
   },
@@ -119,6 +124,11 @@ const T = {
       "the page, or search for your city below.",
     themeDark: "Dark theme", themeLight: "Light theme",
     installText: "Install Calendario Astral on your phone", install: "Install",
+    customize: "Customize", layoutTitle: "Layout", columns: "Columns",
+    colsNote: (n) => `The window only has room for ${n} ${n === 1 ? "column" : "columns"}; more are used when it is wider.`,
+    editLayout: "Move modules", resetLayout: "Restore layout", done: "Done",
+    modToday: "Date & place", modDays: "Days", moveEarlier: "Move earlier", moveLater: "Move later",
+    narrower: "Narrower", wider: "Wider", hideMod: "Hide", showMod: "Show",
     colorsTitle: "Colours", primaryColor: "Primary (header, buttons, highlights)",
     secondaryColor: "Secondary (Sun and sign symbols)", resetColors: "Restore colours",
   },
@@ -499,7 +509,8 @@ function renderStatic() {
   const dark = state.theme === "dark";
   $("themeBtn").textContent = dark ? "☀︎" : "☾︎";
   $("themeBtn").title = dark ? t("themeLight") : t("themeDark");
-  $("colorBtn").title = t("colorsTitle");
+  $("colorBtn").title = t("customize");
+  renderLayout();
   $("todayBtn").hidden = sameDay(state.selected, todayCal());
   applyColors();
   $("cityInput").placeholder = t("cityPlaceholder");
@@ -871,9 +882,180 @@ strip.addEventListener("click", (e) => {
   animateTo(targetLeft(el), () => commit(i));
 });
 
-window.addEventListener("resize", () => {
+// Keep the selected day centred when the strip changes width.
+function centerStrip() {
   const i = items.findIndex((el) => sameDay(itemDate(el), state.selected));
   if (i >= 0) strip.scrollLeft = targetLeft(items[i]);
+}
+window.addEventListener("resize", centerStrip);
+
+/* ---------- layout: modules on a grid the person arranges ---------- */
+
+/* The saved layout: how many columns, and each module's place, width in
+   columns and whether it's hidden. The window decides how many columns
+   actually fit (one on a phone); wider modules shrink to fit them. */
+const MODULE_NAMES = { today: "modToday", days: "modDays", sun: "sun", moon: "moon", planets: "planets" };
+const DEFAULT_LAYOUT = {
+  cols: 2,
+  mods: [
+    { id: "today", span: 2 }, { id: "days", span: 2 },
+    { id: "sun", span: 1 }, { id: "moon", span: 1 }, { id: "planets", span: 2 },
+  ],
+};
+const COLUMN_WIDTH = 400; // px per column on a wide window
+const MIN_COLUMN = 320; // narrowest a column may get before one is dropped
+
+const board = $("board");
+let editingLayout = false;
+
+const layout = (() => {
+  let saved = null;
+  try {
+    saved = JSON.parse(store.get("layout"));
+  } catch {}
+  const base = structuredClone(DEFAULT_LAYOUT);
+  if (!saved || !Array.isArray(saved.mods)) return base;
+  // Keep known modules in their saved order; add any new ones at the end.
+  const mods = saved.mods.filter((m) => MODULE_NAMES[m?.id])
+    .map((m) => ({ id: m.id, span: Math.min(3, Math.max(1, m.span | 0)), hidden: Boolean(m.hidden) }));
+  for (const m of base.mods) if (!mods.some((x) => x.id === m.id)) mods.push(m);
+  return { cols: [1, 2, 3].includes(saved.cols) ? saved.cols : base.cols, mods };
+})();
+
+const saveLayout = () => store.set("layout", JSON.stringify(layout));
+const modEl = (id) => board.querySelector(`.mod[data-mod="${id}"]`);
+const fittingCols = () => Math.max(1, Math.floor((window.innerWidth - 32) / MIN_COLUMN));
+const usedCols = () => Math.min(layout.cols, fittingCols());
+
+function renderLayout() {
+  const cols = usedCols();
+  document.querySelector(".page").style.maxWidth = cols === 1 ? "" : `${cols * COLUMN_WIDTH}px`;
+  board.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+  board.classList.toggle("editing", editingLayout);
+  board.classList.toggle("one-col", cols === 1);
+
+  // Reorder only when needed: moving the day strip in the page resets its scroll.
+  const order = layout.mods.map((m) => m.id);
+  if ([...board.children].some((el, i) => el.dataset.mod !== order[i])) {
+    for (const id of order) board.append(modEl(id));
+  }
+  for (const m of layout.mods) {
+    const el = modEl(m.id);
+    el.style.gridColumn = `span ${Math.min(m.span, cols)}`;
+    el.classList.toggle("is-hidden", Boolean(m.hidden));
+    const tools = el.querySelector(".mod-tools");
+    tools.querySelector(".mod-name").textContent = t(MODULE_NAMES[m.id]);
+    tools.querySelector(".mod-span").textContent = `${Math.min(m.span, cols)}/${cols}`;
+    const [prev, next] = cols === 1 ? ["▲", "▼"] : ["◀", "▶"];
+    Object.assign(tools.querySelector('[data-act="prev"]'), { textContent: prev, title: t("moveEarlier") });
+    Object.assign(tools.querySelector('[data-act="next"]'), { textContent: next, title: t("moveLater") });
+    tools.querySelector('[data-act="narrow"]').title = t("narrower");
+    tools.querySelector('[data-act="wide"]').title = t("wider");
+    tools.querySelector('[data-act="hide"]').textContent = m.hidden ? t("showMod") : t("hideMod");
+  }
+
+  $("colsSeg").querySelectorAll("button").forEach((b) => {
+    b.setAttribute("aria-pressed", String(Number(b.dataset.cols) === layout.cols));
+  });
+  $("colsNote").hidden = layout.cols <= fittingCols();
+  $("colsNote").textContent = t("colsNote")(fittingCols());
+  $("layoutEdit").textContent = editingLayout ? t("done") : t("editLayout");
+  $("layoutDone").hidden = !editingLayout;
+}
+
+// After the layout changes: save it, redraw, and re-fit what depends on widths.
+function layoutChanged() {
+  saveLayout();
+  renderLayout();
+  fitPlace();
+  centerStrip();
+}
+
+// A toolbar on each module, shown only while editing.
+for (const el of board.querySelectorAll(".mod")) {
+  const tools = document.createElement("div");
+  tools.className = "mod-tools";
+  tools.innerHTML = `<span class="mod-grip" aria-hidden="true">⠿</span><span class="mod-name"></span>
+    <button type="button" data-act="prev"></button><button type="button" data-act="next"></button>
+    <button type="button" data-act="narrow">−</button><span class="mod-span"></span>
+    <button type="button" data-act="wide">+</button><button type="button" data-act="hide"></button>`;
+  el.prepend(tools);
+}
+
+board.addEventListener("click", (e) => {
+  const button = e.target.closest(".mod-tools button");
+  if (!button) return;
+  const i = layout.mods.findIndex((m) => m.id === button.closest(".mod").dataset.mod);
+  const m = layout.mods[i];
+  const swap = (j) => {
+    if (j < 0 || j >= layout.mods.length) return;
+    [layout.mods[i], layout.mods[j]] = [layout.mods[j], layout.mods[i]];
+  };
+  const act = button.dataset.act;
+  if (act === "prev") swap(i - 1);
+  else if (act === "next") swap(i + 1);
+  else if (act === "narrow") m.span = Math.max(1, Math.min(m.span, usedCols()) - 1);
+  else if (act === "wide") m.span = Math.min(usedCols(), m.span + 1);
+  else if (act === "hide") m.hidden = !m.hidden;
+  layoutChanged();
+});
+
+/* Drag a module by its ⠿ handle: it moves in the page as the pointer passes
+   over other modules, before or after each depending on which half it's on. */
+board.addEventListener("pointerdown", (e) => {
+  const grip = e.target.closest(".mod-grip");
+  if (!grip || !editingLayout) return;
+  e.preventDefault();
+  const el = grip.closest(".mod");
+  el.classList.add("dragging");
+  grip.setPointerCapture(e.pointerId);
+  const move = (ev) => {
+    const over = document.elementFromPoint(ev.clientX, ev.clientY)?.closest(".mod");
+    if (!over || over === el || over.parentElement !== board) return;
+    const r = over.getBoundingClientRect();
+    const before = usedCols() === 1 || r.width > board.clientWidth * 0.9
+      ? ev.clientY < r.top + r.height / 2
+      : ev.clientX < r.left + r.width / 2;
+    board.insertBefore(el, before ? over : over.nextSibling);
+  };
+  const end = () => {
+    grip.removeEventListener("pointermove", move);
+    grip.removeEventListener("pointerup", end);
+    grip.removeEventListener("pointercancel", end);
+    el.classList.remove("dragging");
+    const order = [...board.children].map((c) => c.dataset.mod);
+    layout.mods.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+    layoutChanged();
+  };
+  grip.addEventListener("pointermove", move);
+  grip.addEventListener("pointerup", end);
+  grip.addEventListener("pointercancel", end);
+});
+
+$("colsSeg").addEventListener("click", (e) => {
+  const cols = Number(e.target.closest("button")?.dataset.cols);
+  if (!cols) return;
+  layout.cols = cols;
+  layoutChanged();
+});
+
+const setEditing = (on) => {
+  editingLayout = on;
+  if (on) $("colorPanel").hidden = true;
+  renderLayout();
+};
+$("layoutEdit").addEventListener("click", () => setEditing(!editingLayout));
+$("layoutDone").addEventListener("click", () => setEditing(false));
+
+$("layoutReset").addEventListener("click", () => {
+  Object.assign(layout, structuredClone(DEFAULT_LAYOUT));
+  layoutChanged();
+});
+
+window.addEventListener("resize", () => {
+  renderLayout();
+  fitPlace();
+  centerStrip();
 });
 
 /* ---------- controls ---------- */
