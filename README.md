@@ -34,10 +34,10 @@ place**, or at a time you pick (see **Hora** below). Today and your own location
     **Secundario** (Secondary) colours the Sun and zodiac symbols. Your colours apply in both
     themes and are remembered; **Restaurar colores** goes back to the theme's own.
   - **Diseño** (Layout): the page is made of five modules (date & place, days, Sun, Moon,
-    planets) on a grid. **Columnas** (Columns) sets 1, 2 or 3 columns; the app widens to use
+    planets) on a grid. **Columnas** (Columns) sets 1 or 2 columns; the app widens to use
     them when the window is big enough (a phone always shows one). **Mover módulos** (Move
-    modules) puts a bar on each module: drag it by **⠿**, or use **◀ ▶** (**▲ ▼** in one column)
-    to move it, **− / +** to make it narrower or wider, and **Ocultar** (Hide) to hide it. Tap
+    modules) puts a bar on each module: drag the module by its bar (a line shows where it will
+    land; Esc cancels), or use **◀ ▶** (**▲ ▼** in one column) to move it, **− / +** to make it narrower or wider, and **Ocultar** (Hide) to hide it. Tap
     **Listo** (Done) to finish. The layout is remembered; **Restaurar diseño** goes back to the
     default.
 

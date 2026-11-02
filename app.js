@@ -917,9 +917,10 @@ const layout = (() => {
   if (!saved || !Array.isArray(saved.mods)) return base;
   // Keep known modules in their saved order; add any new ones at the end.
   const mods = saved.mods.filter((m) => MODULE_NAMES[m?.id])
-    .map((m) => ({ id: m.id, span: Math.min(3, Math.max(1, m.span | 0)), hidden: Boolean(m.hidden) }));
+    .map((m) => ({ id: m.id, span: Math.min(2, Math.max(1, m.span | 0)), hidden: Boolean(m.hidden) }));
   for (const m of base.mods) if (!mods.some((x) => x.id === m.id)) mods.push(m);
-  return { cols: [1, 2, 3].includes(saved.cols) ? saved.cols : base.cols, mods };
+  // Up to 2 columns (a saved 3 from an earlier version becomes 2).
+  return { cols: saved.cols === 1 ? 1 : 2, mods };
 })();
 
 const saveLayout = () => store.set("layout", JSON.stringify(layout));
@@ -1000,36 +1001,80 @@ board.addEventListener("click", (e) => {
   layoutChanged();
 });
 
-/* Drag a module by its ⠿ handle: it moves in the page as the pointer passes
-   over other modules, before or after each depending on which half it's on. */
+/* Drag a module by its bar (anywhere but its buttons). Nothing moves until it's
+   dropped: a label follows the pointer, and a line on the module underneath
+   shows whether it will land before or after it (left/right side when it sits
+   in a row with others, top/bottom otherwise). Near the window's top or bottom
+   edge the page scrolls. Esc cancels. */
 board.addEventListener("pointerdown", (e) => {
-  const grip = e.target.closest(".mod-grip");
-  if (!grip || !editingLayout) return;
+  const bar = e.target.closest(".mod-tools");
+  if (!bar || !editingLayout || e.button !== 0 || e.target.closest("button")) return;
   e.preventDefault();
-  const el = grip.closest(".mod");
+  const el = bar.closest(".mod");
+  const ghost = document.createElement("div");
+  ghost.className = "drag-ghost";
+  ghost.textContent = bar.querySelector(".mod-name").textContent;
+  document.body.append(ghost);
   el.classList.add("dragging");
-  grip.setPointerCapture(e.pointerId);
-  const move = (ev) => {
-    const over = document.elementFromPoint(ev.clientX, ev.clientY)?.closest(".mod");
+  board.classList.add("is-dragging");
+  try {
+    bar.setPointerCapture(e.pointerId);
+  } catch {}
+
+  let target = null; // { el, before }
+  let lastY = e.clientY;
+  let moved = false;
+  const clearMark = () => target?.el.removeAttribute("data-drop");
+  const place = (x, y) => {
+    ghost.style.transform = `translate(${x + 14}px, ${y + 10}px)`;
+    const over = document.elementFromPoint(x, y)?.closest(".mod");
+    clearMark();
+    target = null;
     if (!over || over === el || over.parentElement !== board) return;
     const r = over.getBoundingClientRect();
-    const before = usedCols() === 1 || r.width > board.clientWidth * 0.9
-      ? ev.clientY < r.top + r.height / 2
-      : ev.clientX < r.left + r.width / 2;
-    board.insertBefore(el, before ? over : over.nextSibling);
+    const vertical = usedCols() === 1 || r.width > board.clientWidth * 0.9;
+    const before = vertical ? y < r.top + r.height / 2 : x < r.left + r.width / 2;
+    over.dataset.drop = `${before ? "before" : "after"}-${vertical ? "y" : "x"}`;
+    target = { el: over, before };
   };
-  const end = () => {
-    grip.removeEventListener("pointermove", move);
-    grip.removeEventListener("pointerup", end);
-    grip.removeEventListener("pointercancel", end);
+  const move = (ev) => {
+    lastY = ev.clientY;
+    moved = true;
+    place(ev.clientX, ev.clientY);
+  };
+  let raf = requestAnimationFrame(function autoScroll() {
+    const edge = 70;
+    const speed = lastY < edge ? lastY - edge : lastY > innerHeight - edge ? lastY - (innerHeight - edge) : 0;
+    if (speed && moved) window.scrollBy(0, speed / 3);
+    raf = requestAnimationFrame(autoScroll);
+  });
+  const finish = (drop) => () => {
+    cancelAnimationFrame(raf);
+    window.removeEventListener("pointermove", move);
+    window.removeEventListener("pointerup", onUp);
+    window.removeEventListener("pointercancel", onCancel);
+    window.removeEventListener("keydown", onKey);
+    ghost.remove();
+    clearMark();
     el.classList.remove("dragging");
-    const order = [...board.children].map((c) => c.dataset.mod);
-    layout.mods.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+    board.classList.remove("is-dragging");
+    if (!drop || !target) return;
+    const i = layout.mods.findIndex((m) => m.id === el.dataset.mod);
+    const [moved] = layout.mods.splice(i, 1);
+    const j = layout.mods.findIndex((m) => m.id === target.el.dataset.mod);
+    layout.mods.splice(target.before ? j : j + 1, 0, moved);
     layoutChanged();
   };
-  grip.addEventListener("pointermove", move);
-  grip.addEventListener("pointerup", end);
-  grip.addEventListener("pointercancel", end);
+  const onUp = finish(true);
+  const onCancel = finish(false);
+  const onKey = (ev) => {
+    if (ev.key === "Escape") onCancel();
+  };
+  window.addEventListener("pointermove", move);
+  window.addEventListener("pointerup", onUp);
+  window.addEventListener("pointercancel", onCancel);
+  window.addEventListener("keydown", onKey);
+  place(e.clientX, e.clientY);
 });
 
 $("colsSeg").addEventListener("click", (e) => {

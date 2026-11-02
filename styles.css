@@ -492,7 +492,37 @@ button { font: inherit; color: inherit; }
 .mod-tools { display: none; }
 .board.editing .mod { padding-top: 42px; outline: 2px dashed var(--accent); outline-offset: -3px; }
 .board.editing .mod.is-hidden { display: flex; opacity: .45; }
-.board.editing .mod.dragging { opacity: .6; z-index: 4; }
+.board.editing .mod.dragging { opacity: .35; }
+.board.editing .mod-tools { cursor: grab; touch-action: none; user-select: none; }
+.board.is-dragging, .board.is-dragging * { cursor: grabbing !important; }
+/* Where a dragged module will land: a thick line on that side of the module underneath. */
+.mod[data-drop]::after {
+  content: "";
+  position: absolute;
+  z-index: 5;
+  border-radius: 3px;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--paper);
+}
+.mod[data-drop$="-y"]::after { left: 6px; right: 6px; height: 6px; }
+.mod[data-drop$="-x"]::after { top: 6px; bottom: 6px; width: 6px; }
+.mod[data-drop="before-y"]::after { top: -3px; }
+.mod[data-drop="after-y"]::after { bottom: -3px; }
+.mod[data-drop="before-x"]::after { left: -3px; }
+.mod[data-drop="after-x"]::after { right: -3px; }
+.drag-ghost {
+  position: fixed;
+  left: 0; top: 0;
+  z-index: 20;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: .8rem;
+  font-weight: 600;
+  pointer-events: none;
+  box-shadow: 0 8px 20px -6px rgba(0,0,0,.45);
+}
 .board.editing .mod-tools {
   display: flex;
   align-items: center;
