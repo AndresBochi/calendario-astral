@@ -4,6 +4,13 @@
 
 const A = Astronomy;
 
+/* A phone: a touch screen with no mouse, whose shorter side is under 600 px
+   (tablets and computers fall outside). Phones get one column and no column
+   options. The install bar names the device: phone, tablet or PC. */
+const IS_TOUCH_ONLY = Boolean(window.matchMedia?.("(pointer: coarse) and (hover: none)").matches);
+const IS_PHONE = IS_TOUCH_ONLY && Math.min(screen.width, screen.height) < 600;
+const DEVICE = IS_PHONE ? "phone" : IS_TOUCH_ONLY ? "tablet" : "pc";
+
 const SIGNS = [
   { g: "♈", es: "Aries", en: "Aries" },
   { g: "♉", es: "Tauro", en: "Taurus" },
@@ -73,7 +80,7 @@ const T = {
     helpOther: "La ubicación está bloqueada. Permítela desde el icono junto a la dirección y " +
       "recarga la página, o busca tu ciudad abajo.",
     themeDark: "Tema oscuro", themeLight: "Tema claro",
-    installText: "Instala Calendario Astral en tu teléfono", install: "Instalar",
+    installText: `Instala Calendario Astral en tu ${{ phone: "teléfono", tablet: "tablet", pc: "PC" }[DEVICE]}`, install: "Instalar",
     customize: "Personalizar", layoutTitle: "Diseño", columns: "Columnas",
     colsNote: (n) => `La ventana solo tiene lugar para ${n} ${n === 1 ? "columna" : "columnas"}; se usan más al agrandarla.`,
     editLayout: "Mover módulos", resetLayout: "Restaurar diseño", done: "Listo",
@@ -123,7 +130,7 @@ const T = {
     helpOther: "Location is blocked. Allow it from the icon next to the address bar and reload " +
       "the page, or search for your city below.",
     themeDark: "Dark theme", themeLight: "Light theme",
-    installText: "Install Calendario Astral on your phone", install: "Install",
+    installText: `Install Calendario Astral on your ${{ phone: "phone", tablet: "tablet", pc: "PC" }[DEVICE]}`, install: "Install",
     customize: "Customize", layoutTitle: "Layout", columns: "Columns",
     colsNote: (n) => `The window only has room for ${n} ${n === 1 ? "column" : "columns"}; more are used when it is wider.`,
     editLayout: "Move modules", resetLayout: "Restore layout", done: "Done",
@@ -926,7 +933,7 @@ const layout = (() => {
 const saveLayout = () => store.set("layout", JSON.stringify(layout));
 const modEl = (id) => board.querySelector(`.mod[data-mod="${id}"]`);
 const fittingCols = () => Math.max(1, Math.floor((window.innerWidth - 32) / MIN_COLUMN));
-const usedCols = () => Math.min(layout.cols, fittingCols());
+const usedCols = () => (IS_PHONE ? 1 : Math.min(layout.cols, fittingCols()));
 
 function renderLayout() {
   const cols = usedCols();
@@ -958,7 +965,8 @@ function renderLayout() {
   $("colsSeg").querySelectorAll("button").forEach((b) => {
     b.setAttribute("aria-pressed", String(Number(b.dataset.cols) === layout.cols));
   });
-  $("colsNote").hidden = layout.cols <= fittingCols();
+  $("colsRow").hidden = IS_PHONE;
+  $("colsNote").hidden = IS_PHONE || layout.cols <= fittingCols();
   $("colsNote").textContent = t("colsNote")(fittingCols());
   $("layoutEdit").textContent = editingLayout ? t("done") : t("editLayout");
   $("layoutDone").hidden = !editingLayout;

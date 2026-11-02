@@ -7,8 +7,12 @@ set times.
 **Open it:** https://andresbochi.github.io/calendario-astral/ (works in Chrome, Safari, Edge and
 Firefox, on phones and computers).
 
+**Scan to open it on your phone:**
+
+<img src="icons/qr-code.png" alt="QR code to open Calendario Astral" width="200">
+
 **Install it on Android:** open the link in Chrome, then tap **Instalar** (Install) in the bar
-under the header, or use Chrome's **⋮ → Install app** (on some phones, **Add to Home screen → Install**). It gets its own icon,
+under the header (on a computer it says "en tu PC"), or use Chrome's **⋮ → Install app** (on some phones, **Add to Home screen → Install**). It gets its own icon,
 opens full screen without the browser bar, and works offline after the first visit (only the town
 name and the town search need internet). Your location is checked again each time you open the app or come back
 to it, unless you picked a city by hand.
@@ -35,7 +39,8 @@ place**, or at a time you pick (see **Hora** below). Today and your own location
     themes and are remembered; **Restaurar colores** goes back to the theme's own.
   - **Diseño** (Layout): the page is made of five modules (date & place, days, Sun, Moon,
     planets) on a grid. **Columnas** (Columns) sets 1 or 2 columns; the app widens to use
-    them when the window is big enough (a phone always shows one). **Mover módulos** (Move
+    them when the window is big enough. On a phone the page is always one column and this option
+    isn't shown; you can still reorder and hide modules. **Mover módulos** (Move
     modules) puts a bar on each module: drag the module by its bar (a line shows where it will
     land; Esc cancels), or use **◀ ▶** (**▲ ▼** in one column) to move it, **− / +** to make it narrower or wider, and **Ocultar** (Hide) to hide it. Tap
     **Listo** (Done) to finish. The layout is remembered; **Restaurar diseño** goes back to the
