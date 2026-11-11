@@ -151,6 +151,10 @@ button { font: inherit; color: inherit; }
   cursor: pointer;
 }
 .chip:hover { background: rgba(255,255,255,.26); }
+.chip .heart { display: block; width: 1.45em; height: 1.45em; margin: auto; }
+/* Only when even the smallest header size can't fit: hide the app's name. */
+.cal-head.no-name .app-name { display: none; }
+.cal-head.no-name .controls { margin-left: auto; }
 .chip[hidden] { display: none; }
 /* Palette chip: primary and secondary colour, half each. */
 .swatch {
@@ -344,6 +348,11 @@ button { font: inherit; color: inherit; }
   cursor: pointer;
 }
 .loc-close:hover { color: var(--ink); }
+/* Support panel: Cafecito (pay what you want) and the Android app. */
+.support-text { margin: 0; font-size: .85rem; line-height: 1.45; }
+.support-block { display: grid; gap: 10px; }
+.support-block[hidden], .loc-panel a.loc-btn:not([href]) { display: none; }
+.loc-panel a.loc-btn { text-decoration: none; }
 .loc-help {
   margin: 0;
   padding: 10px 12px;

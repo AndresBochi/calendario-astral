@@ -32,6 +32,9 @@ place**, or at a time you pick (see **Hora** below). Today and your own location
 - **‹ Octubre ›** and **‹ 2026 ›**: go back or forward one month or one year. If the day doesn't
   exist in the new month, it moves to the month's last day (31 Jan → 28/29 Feb).
 - **Hoy** (Today): appears when you are on another day; takes you back to today.
+- **♥**: opens **Apoyar · Descargar** (Support · Download): support the work by paying what you
+  want on [Cafecito](https://cafecito.app/) (card or Mercado Pago), and, on Android, download the
+  app (APK). The download is free either way.
 - **EN / ES**: language. **☾ / ☀**: dark or light theme. Both are remembered on your device.
 - **Two-colour dot**: opens the **Personalizar** (Customize) panel.
   - **Colores** (Colours): **Primario** (Primary) colours the header, buttons and highlights;
@@ -247,6 +250,24 @@ caches the page and every local file it links to, fetches them fresh when online
 the cache offline. The icons in `icons/` (a cream crescent Moon and a gold star on the header
 red) are drawn by `tools/make_icons.py`, with no dependencies: `python tools/make_icons.py icons`.
 
-To publish it on Google Play later, wrap the site with
-[Bubblewrap](https://github.com/GoogleChromeLabs/bubblewrap) (a Trusted Web Activity) or
-[Capacitor](https://capacitorjs.com/).
+### Android app (APK)
+
+`android/` is a [Trusted Web Activity](https://developer.chrome.com/docs/android/trusted-web-activity)
+generated with [Bubblewrap](https://github.com/GoogleChromeLabs/bubblewrap)'s library: a small
+Android app (`io.github.andresbochi.calendarioastral`) that opens the live site full screen in
+Chrome, so every push to `main` reaches the app too. It needs Android 7.0 or newer.
+
+- **Signing key**: `keys\calendario-astral.keystore` in your user folder (`C:\Users\<you>`),
+  with its password in `calendario-astral-keystore-password.txt` beside it. Neither is in git.
+  Keep a backup of both: without them, no update can be installed over the app people already have.
+- **Build**: `bash android/build-apk.sh` (Git Bash) builds and signs
+  `android/dist/calendario-astral.apk`, with Android Studio's Java and SDK. Before each new
+  release, raise `versionCode` (and `versionName`) in `android/app/build.gradle` and
+  `android/twa-manifest.json`.
+- **Publish**: upload the APK to a GitHub Release, named `calendario-astral.apk`. The ♥ panel
+  links to `releases/latest/download/calendario-astral.apk`, so the newest release is always the
+  one downloaded.
+- **Full screen (no address bar)**: Android only trusts the app if
+  `https://andresbochi.github.io/.well-known/assetlinks.json` lists its key. That file lives in
+  the `andresbochi.github.io` repository (with an empty `.nojekyll` file, so GitHub Pages serves
+  the `.well-known` folder). A copy is in `android/assetlinks.json`.

@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.andresbochi.calendarioastral",
+      "sha256_cert_fingerprints": [
+        "37:F1:77:29:E2:95:57:77:AC:1B:97:59:1B:24:24:23:4C:B2:22:09:BB:97:3E:77:E2:B3:67:A5:F5:91:D3:1E"
+      ]
+    }
+  }
+]

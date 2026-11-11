@@ -11,6 +11,21 @@ const IS_TOUCH_ONLY = Boolean(window.matchMedia?.("(pointer: coarse) and (hover:
 const IS_PHONE = IS_TOUCH_ONLY && Math.min(screen.width, screen.height) < 600;
 const DEVICE = IS_PHONE ? "phone" : IS_TOUCH_ONLY ? "tablet" : "pc";
 
+/* Support panel: donations through Cafecito (the person picks the amount), and
+   the Android app, published as a GitHub Release. Inside that app (opened with an
+   android-app:// referrer) the download isn't offered; the flag lasts the session. */
+const CAFECITO_URL = "";
+const APK_URL = "https://github.com/AndresBochi/calendario-astral/releases/latest/download/calendario-astral.apk";
+const IS_ANDROID = /Android/i.test(navigator.userAgent);
+const IN_APK = (() => {
+  try {
+    if (document.referrer.startsWith("android-app://")) sessionStorage.setItem("inApk", "1");
+    return sessionStorage.getItem("inApk") === "1";
+  } catch {
+    return document.referrer.startsWith("android-app://");
+  }
+})();
+
 const SIGNS = [
   { g: "♈", es: "Aries", en: "Aries" },
   { g: "♉", es: "Tauro", en: "Taurus" },
@@ -89,6 +104,17 @@ const T = {
     colorsTitle: "Colores", primaryColor: "Primario (encabezado, botones, resaltados)",
     secondaryColor: "Secundario (símbolos del sol y los signos)", resetColors: "Restaurar colores",
     fontTitle: "Tipografía", fontNormal: "Normal", fontMore: "Más fuentes",
+    support: "Apoyar · Descargar la app", supportTitle: "Apoyar · Descargar",
+    supportText: "Calendario Astral es gratis y sin publicidad. Si te resulta útil, puedes apoyar " +
+      "el trabajo pagando lo que quieras en Cafecito, con tarjeta o Mercado Pago.",
+    donate: "☕ Apoyar en Cafecito",
+    apkTitle: "App para Android",
+    apkText: "Paga lo que quieras, o nada: la descarga es libre.",
+    downloadApk: "Descargar APK",
+    apkHelp: "Al abrir el archivo, Android puede pedirte que permitas instalar apps desde Chrome " +
+      "o Archivos. La app se actualiza sola, junto con la página.",
+    apkOnlyAndroid: "La app (APK) es para teléfonos y tablets Android. Aquí puedes instalar la " +
+      "página como app desde el navegador.",
     fontNote: "OpenDyslexic es una letra pensada para facilitar la lectura a personas con dislexia.",
   },
   en: {
@@ -141,6 +167,17 @@ const T = {
     colorsTitle: "Colours", primaryColor: "Primary (header, buttons, highlights)",
     secondaryColor: "Secondary (Sun and sign symbols)", resetColors: "Restore colours",
     fontTitle: "Font", fontNormal: "Standard", fontMore: "More fonts",
+    support: "Support · Download the app", supportTitle: "Support · Download",
+    supportText: "Calendario Astral is free and has no ads. If you find it useful, you can support " +
+      "the work by paying what you want on Cafecito, by card or Mercado Pago.",
+    donate: "☕ Support on Cafecito",
+    apkTitle: "Android app",
+    apkText: "Pay what you want, or nothing: the download is free.",
+    downloadApk: "Download APK",
+    apkHelp: "When you open the file, Android may ask you to allow installing apps from Chrome " +
+      "or Files. The app updates itself, together with the page.",
+    apkOnlyAndroid: "The app (APK) is for Android phones and tablets. Here you can install the " +
+      "page as an app from the browser.",
     fontNote: "OpenDyslexic is a typeface designed to make reading easier for people with dyslexia.",
   },
 };
@@ -538,6 +575,7 @@ function renderStatic() {
   $("themeBtn").textContent = dark ? "☀︎" : "☾︎";
   $("themeBtn").title = dark ? t("themeLight") : t("themeDark");
   $("colorBtn").title = t("customize");
+  $("supportBtn").title = t("support");
   renderLayout();
   $("todayBtn").hidden = sameDay(state.selected, todayCal());
   applyColors();
@@ -615,11 +653,19 @@ function fitHead() {
   const head = document.querySelector(".cal-head");
   const rows = [...head.querySelectorAll(".head-row")];
   const overflowing = () => rows.some((row) => row.scrollWidth > row.clientWidth + 1);
-  let fit = 1;
-  head.style.setProperty("--head-fit", fit);
-  while (fit > 0.6 && overflowing()) {
-    fit = Math.round((fit - 0.05) * 100) / 100;
+  const shrink = () => {
+    let fit = 1;
     head.style.setProperty("--head-fit", fit);
+    while (fit > 0.6 && overflowing()) {
+      fit = Math.round((fit - 0.05) * 100) / 100;
+      head.style.setProperty("--head-fit", fit);
+    }
+  };
+  head.classList.remove("no-name");
+  shrink();
+  if (overflowing()) { // still too wide: drop the app's name, then size again
+    head.classList.add("no-name");
+    shrink();
   }
 }
 
@@ -1190,6 +1236,19 @@ $("themeBtn").addEventListener("click", () => {
 
 $("colorBtn").addEventListener("click", () => {
   $("colorPanel").hidden = !$("colorPanel").hidden;
+  if (!$("colorPanel").hidden) $("supportPanel").hidden = true;
+});
+
+if (CAFECITO_URL) $("donateBtn").href = CAFECITO_URL;
+$("apkBtn").href = APK_URL;
+$("apkBlock").hidden = !IS_ANDROID || IN_APK;
+$("apkElsewhere").hidden = IS_ANDROID;
+$("supportBtn").addEventListener("click", () => {
+  $("supportPanel").hidden = !$("supportPanel").hidden;
+  if (!$("supportPanel").hidden) $("colorPanel").hidden = true;
+});
+$("supportClose").addEventListener("click", () => {
+  $("supportPanel").hidden = true;
 });
 $("colorClose").addEventListener("click", () => {
   $("colorPanel").hidden = true;
