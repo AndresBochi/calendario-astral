@@ -14,7 +14,7 @@ const DEVICE = IS_PHONE ? "phone" : IS_TOUCH_ONLY ? "tablet" : "pc";
 /* Support panel: donations through Cafecito (the person picks the amount), and
    the Android app, published as a GitHub Release. Inside that app (opened with an
    android-app:// referrer) the download isn't offered; the flag lasts the session. */
-const CAFECITO_URL = "";
+const CAFECITO_URL = "https://cafecito.app/elcalendarioastral";
 const APK_URL = "https://github.com/AndresBochi/calendario-astral/releases/latest/download/calendario-astral.apk";
 const IS_ANDROID = /Android/i.test(navigator.userAgent);
 const IN_APK = (() => {

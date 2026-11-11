@@ -33,7 +33,7 @@ place**, or at a time you pick (see **Hora** below). Today and your own location
   exist in the new month, it moves to the month's last day (31 Jan → 28/29 Feb).
 - **Hoy** (Today): appears when you are on another day; takes you back to today.
 - **♥**: opens **Apoyar · Descargar** (Support · Download): support the work by paying what you
-  want on [Cafecito](https://cafecito.app/) (card or Mercado Pago), and, on Android, download the
+  want on [Cafecito](https://cafecito.app/elcalendarioastral) (card or Mercado Pago), and, on Android, download the
   app (APK). The download is free either way.
 - **EN / ES**: language. **☾ / ☀**: dark or light theme. Both are remembered on your device.
 - **Two-colour dot**: opens the **Personalizar** (Customize) panel.
