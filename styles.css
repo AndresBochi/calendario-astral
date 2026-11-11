@@ -1,4 +1,21 @@
+/* OpenDyslexic (SIL Open Font License, vendor/fonts/OFL.txt): only downloaded
+   when the person picks it in Personalizar. */
+@font-face {
+  font-family: "OpenDyslexic";
+  src: url("vendor/fonts/OpenDyslexic-Regular.woff2") format("woff2");
+  font-weight: 400 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "OpenDyslexic";
+  src: url("vendor/fonts/OpenDyslexic-Bold.woff2") format("woff2");
+  font-weight: 600 900;
+  font-display: swap;
+}
+
 :root {
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Fraunces", Georgia, serif;
   --bg: #e9e4da;
   --paper: #fbf8f2;
   --paper-2: #f3eee4;
@@ -37,7 +54,7 @@ html, body { margin: 0; }
 body {
   background: var(--bg);
   color: var(--ink);
-  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-body);
   min-height: 100vh;
   padding: 28px 16px 32px;
   transition: background .3s, color .3s;
@@ -105,13 +122,13 @@ button { font: inherit; color: inherit; }
 }
 .arrow:hover { background: rgba(255,255,255,.16); }
 .month {
-  font-family: "Fraunces", Georgia, serif;
+  font-family: var(--font-display);
   font-weight: 800;
   font-size: 1.45rem;
   text-transform: capitalize;
 }
 .year {
-  font-family: "Fraunces", Georgia, serif;
+  font-family: var(--font-display);
   font-weight: 600;
   font-size: 1.2rem;
   min-width: 3.2em;
@@ -156,7 +173,15 @@ button { font: inherit; color: inherit; }
 }
 .today.loc-wide { grid-template-areas: "date time" "loc loc"; }
 .today.loc-wide .loc { margin-top: 10px; }
-.today-date { grid-area: date; position: relative; }
+/* Weekday and day number centred over the date pill below them. */
+.today-date {
+  grid-area: date;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
 .weekday {
   text-transform: capitalize;
   font-weight: 600;
@@ -164,7 +189,7 @@ button { font: inherit; color: inherit; }
   font-size: .95rem;
 }
 .daynum {
-  font-family: "Fraunces", Georgia, serif;
+  font-family: var(--font-display);
   font-weight: 800;
   font-size: 5.2rem;
   line-height: .9;
@@ -205,7 +230,7 @@ button { font: inherit; color: inherit; }
   border-bottom: 1px dashed transparent;
   background: transparent;
   color: inherit;
-  font-family: "Fraunces", Georgia, serif;
+  font-family: var(--font-display);
   font-weight: 600;
   font-size: 2rem;
   font-variant-numeric: tabular-nums;
@@ -218,7 +243,7 @@ button { font: inherit; color: inherit; }
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  font-family: "Fraunces", Georgia, serif;
+  font-family: var(--font-display);
   font-weight: 600;
   font-size: 1.5rem;
 }
@@ -418,7 +443,7 @@ button { font: inherit; color: inherit; }
 
 .big-sign { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
 .sign-glyph { font-size: 2.4rem; line-height: 1; color: var(--sun); }
-.sign-name { font-family: "Fraunces", Georgia, serif; font-size: 1.8rem; font-weight: 600; }
+.sign-name { font-family: var(--font-display); font-size: 1.8rem; font-weight: 600; }
 
 .facts { margin: 0; display: grid; gap: 6px; }
 .facts > div {
@@ -436,7 +461,7 @@ button { font: inherit; color: inherit; }
 .moon-dark { fill: var(--moon-dark); }
 .moon-lit { fill: var(--moon-lit); }
 .moon-rim { fill: none; stroke: var(--line); stroke-width: 2; }
-.phase-name { font-family: "Fraunces", Georgia, serif; font-size: 1.35rem; font-weight: 600; }
+.phase-name { font-family: var(--font-display); font-size: 1.35rem; font-weight: 600; }
 .illum { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
 
 /* planets: compact */
@@ -576,6 +601,14 @@ button { font: inherit; color: inherit; }
 }
 .seg button + button { border-left: 1px solid var(--line); }
 .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.seg button[data-font] { padding: 0 12px; }
+.seg button[data-font="dyslexic"] { font-family: "OpenDyslexic", sans-serif; }
+
+/* Dyslexia-friendly font: every text in the app uses OpenDyslexic. */
+:root[data-font="dyslexic"] {
+  --font-body: "OpenDyslexic", system-ui, sans-serif;
+  --font-display: "OpenDyslexic", system-ui, sans-serif;
+}
 
 .layout-done {
   position: fixed;

@@ -88,6 +88,8 @@ const T = {
     narrower: "Más angosto", wider: "Más ancho", hideMod: "Ocultar", showMod: "Mostrar",
     colorsTitle: "Colores", primaryColor: "Primario (encabezado, botones, resaltados)",
     secondaryColor: "Secundario (símbolos del sol y los signos)", resetColors: "Restaurar colores",
+    fontTitle: "Tipografía", fontNormal: "Normal",
+    fontNote: "OpenDyslexic es una letra pensada para facilitar la lectura a personas con dislexia.",
   },
   en: {
     time: "Time", sun: "Sun", moon: "Moon", sign: "Sign", today: "Today",
@@ -138,6 +140,8 @@ const T = {
     narrower: "Narrower", wider: "Wider", hideMod: "Hide", showMod: "Show",
     colorsTitle: "Colours", primaryColor: "Primary (header, buttons, highlights)",
     secondaryColor: "Secondary (Sun and sign symbols)", resetColors: "Restore colours",
+    fontTitle: "Font", fontNormal: "Standard",
+    fontNote: "OpenDyslexic is a typeface designed to make reading easier for people with dyslexia.",
   },
 };
 
@@ -247,6 +251,7 @@ const state = {
   tz: tzFor(savedLoc?.lat, savedLoc?.lon),
   selected: null,
   fixedTime: null, // { h, mi } when the person picks a time; null follows the clock
+  font: store.get("font") === "dyslexic" ? "dyslexic" : "normal",
   colors: (() => { // { primary, secondary } picked by the person; missing = the theme's own
     try {
       return JSON.parse(store.get("colors")) || {};
@@ -504,6 +509,10 @@ function moonSVG(fraction, waxing, size) {
 function renderStatic() {
   document.documentElement.lang = state.lang;
   document.documentElement.dataset.theme = state.theme;
+  document.documentElement.dataset.font = state.font;
+  $("fontSeg").querySelectorAll("button").forEach((b) => {
+    b.setAttribute("aria-pressed", String(b.dataset.font === state.font));
+  });
   // Keys with a "…Set" variant (azimuth, altitude, time) switch to it while a time is chosen.
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     const key = el.dataset.i18n;
@@ -1138,6 +1147,18 @@ $("colorReset").addEventListener("click", () => {
   state.colors = {};
   store.set("colors", "{}");
   applyColors();
+});
+
+$("fontSeg").addEventListener("click", (e) => {
+  const font = e.target.closest("button")?.dataset.font;
+  if (!font) return;
+  state.font = font;
+  store.set("font", font);
+  renderStatic();
+  // Text widths change with the font: re-fit once it has loaded.
+  const refit = () => { fitPlace(); centerStrip(); };
+  refit();
+  document.fonts?.load(`600 1em ${font === "dyslexic" ? "OpenDyslexic" : "Fraunces"}`).then(refit, () => {});
 });
 
 $("langBtn").addEventListener("click", () => {

@@ -215,7 +215,8 @@ search for your town.
 ## For developers
 
 The app is plain HTML, CSS and JavaScript (`index.html`, `styles.css`, `app.js`), with the two
-libraries saved in `vendor/`. There is no build step.
+libraries saved in `vendor/`, plus the [OpenDyslexic](https://opendyslexic.org/) font
+(SIL Open Font License, `vendor/fonts/OFL.txt`) offered in Personalizar. There is no build step.
 
 ### Run locally
 
