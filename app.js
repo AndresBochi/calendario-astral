@@ -542,6 +542,7 @@ function renderStatic() {
   $("todayBtn").hidden = sameDay(state.selected, todayCal());
   applyColors();
   $("cityInput").placeholder = t("cityPlaceholder");
+  fitHead();
 }
 
 // The picked font replaces both the body and the heading font.
@@ -606,6 +607,20 @@ function renderDate() {
   $("weekday").textContent = d.toLocaleDateString(loc, { timeZone: "UTC", weekday: "long" });
   $("daynum").textContent = d.getUTCDate();
   $("dmy").textContent = `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`;
+  fitHead();
+}
+
+// Shrink the header text in small steps until both of its rows fit the width.
+function fitHead() {
+  const head = document.querySelector(".cal-head");
+  const rows = [...head.querySelectorAll(".head-row")];
+  const overflowing = () => rows.some((row) => row.scrollWidth > row.clientWidth + 1);
+  let fit = 1;
+  head.style.setProperty("--head-fit", fit);
+  while (fit > 0.6 && overflowing()) {
+    fit = Math.round((fit - 0.05) * 100) / 100;
+    head.style.setProperty("--head-fit", fit);
+  }
 }
 
 // The location's local time, or the chosen time, which stays put.
@@ -656,8 +671,8 @@ function fitPlace() {
   if (overflowing()) line.classList.add("wrap");
 }
 
-window.addEventListener("resize", fitPlace);
-document.fonts?.ready.then(fitPlace);
+window.addEventListener("resize", () => { fitPlace(); fitHead(); });
+document.fonts?.ready.then(() => { fitPlace(); fitHead(); });
 
 function locPanelButton(className, label) {
   const b = document.createElement("button");
@@ -1196,7 +1211,7 @@ $("colorReset").addEventListener("click", () => {
 
 // Text widths change with the font: re-fit now, and again once it has loaded.
 function refitFont(font) {
-  const refit = () => { fitPlace(); centerStrip(); };
+  const refit = () => { fitPlace(); fitHead(); centerStrip(); };
   refit();
   document.fonts?.load(`600 1em "${FONTS[font].name || "Fraunces"}"`).then(refit, () => {});
 }

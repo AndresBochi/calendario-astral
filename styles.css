@@ -90,7 +90,10 @@ button { font: inherit; color: inherit; }
 }
 
 /* header band */
+/* --head-fit (1 down to .6) is lowered by app.js when a header row doesn't fit
+   the width: long months, wide fonts, narrow phones. */
 .cal-head {
+  --head-fit: 1;
   background: var(--accent);
   color: var(--accent-ink);
   border-radius: 14px 14px 0 0;
@@ -104,7 +107,7 @@ button { font: inherit; color: inherit; }
 }
 .head-row.nav { margin-top: 6px; margin-left: -8px; }
 .app-name {
-  font-size: .7rem;
+  font-size: calc(.7rem * var(--head-fit));
   text-transform: uppercase;
   letter-spacing: .14em;
   opacity: .85;
@@ -112,7 +115,7 @@ button { font: inherit; color: inherit; }
 
 .stepper { display: flex; align-items: center; gap: 2px; }
 .arrow {
-  width: 30px; height: 34px;
+  width: calc(22px + 8px * var(--head-fit)); height: 34px;
   border: 0;
   border-radius: 8px;
   background: transparent;
@@ -124,13 +127,13 @@ button { font: inherit; color: inherit; }
 .month {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 1.45rem;
+  font-size: calc(1.45rem * var(--head-fit));
   text-transform: capitalize;
 }
 .year {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 1.2rem;
+  font-size: calc(1.2rem * var(--head-fit));
   min-width: 3.2em;
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -139,12 +142,12 @@ button { font: inherit; color: inherit; }
 .controls { display: flex; gap: 6px; }
 .chip {
   font-weight: 600;
-  font-size: .8rem;
+  font-size: calc(.8rem * var(--head-fit));
   background: rgba(255,255,255,.16);
   border: 1px solid rgba(255,255,255,.35);
   border-radius: 999px;
-  min-width: 40px; height: 32px;
-  padding: 0 10px;
+  min-width: calc(28px + 12px * var(--head-fit)); height: 32px;
+  padding: 0 calc(10px * var(--head-fit));
   cursor: pointer;
 }
 .chip:hover { background: rgba(255,255,255,.26); }
