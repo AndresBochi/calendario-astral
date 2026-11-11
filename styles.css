@@ -601,14 +601,28 @@ button { font: inherit; color: inherit; }
 }
 .seg button + button { border-left: 1px solid var(--line); }
 .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
-.seg button[data-font] { padding: 0 12px; }
-.seg button[data-font="dyslexic"] { font-family: "OpenDyslexic", sans-serif; }
-
-/* Dyslexia-friendly font: every text in the app uses OpenDyslexic. */
-:root[data-font="dyslexic"] {
-  --font-body: "OpenDyslexic", system-ui, sans-serif;
-  --font-display: "OpenDyslexic", system-ui, sans-serif;
+/* Font choices: separate pills, so the dropdown of other fonts can sit
+   between Normal and OpenDyslexic and the row wraps on narrow phones. */
+.font-choices { display: flex; flex-wrap: wrap; gap: 6px; }
+.font-choices > * {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
 }
+.font-choices select { padding-right: 6px; }
+.font-choices select option { background: var(--paper); color: var(--ink); }
+.font-choices [aria-pressed="true"], .font-choices select.on {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.font-choices [data-font="dyslexic"] { font-family: "OpenDyslexic", sans-serif; }
 
 .layout-done {
   position: fixed;

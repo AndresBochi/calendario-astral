@@ -88,7 +88,7 @@ const T = {
     narrower: "Más angosto", wider: "Más ancho", hideMod: "Ocultar", showMod: "Mostrar",
     colorsTitle: "Colores", primaryColor: "Primario (encabezado, botones, resaltados)",
     secondaryColor: "Secundario (símbolos del sol y los signos)", resetColors: "Restaurar colores",
-    fontTitle: "Tipografía", fontNormal: "Normal",
+    fontTitle: "Tipografía", fontNormal: "Normal", fontMore: "Más fuentes",
     fontNote: "OpenDyslexic es una letra pensada para facilitar la lectura a personas con dislexia.",
   },
   en: {
@@ -140,7 +140,7 @@ const T = {
     narrower: "Narrower", wider: "Wider", hideMod: "Hide", showMod: "Show",
     colorsTitle: "Colours", primaryColor: "Primary (header, buttons, highlights)",
     secondaryColor: "Secondary (Sun and sign symbols)", resetColors: "Restore colours",
-    fontTitle: "Font", fontNormal: "Standard",
+    fontTitle: "Font", fontNormal: "Standard", fontMore: "More fonts",
     fontNote: "OpenDyslexic is a typeface designed to make reading easier for people with dyslexia.",
   },
 };
@@ -240,6 +240,21 @@ const savedLoc = (() => {
   }
 })();
 
+/* Fonts for Personalizar › Tipografía. "normal" is the app's own pair (Inter
+   with Fraunces headings); any other font is used for all the text. The ones
+   with a `google` query come from Google Fonts, loaded only once picked;
+   OpenDyslexic is saved in vendor/fonts (styles.css). */
+const FONTS = {
+  normal: { name: "" },
+  atkinson: { name: "Atkinson Hyperlegible", label: "Atkinson", google: "Atkinson+Hyperlegible:wght@400;700" },
+  lexend: { name: "Lexend", google: "Lexend:wght@400;500;600;700;800" },
+  andika: { name: "Andika", google: "Andika:wght@400;700" },
+  nunito: { name: "Nunito", google: "Nunito:wght@400;500;600;800" },
+  merriweather: { name: "Merriweather", google: "Merriweather:wght@400;700;900" },
+  dyslexic: { name: "OpenDyslexic" },
+};
+const MORE_FONTS = Object.keys(FONTS).filter((k) => FONTS[k].google);
+
 const state = {
   lang: store.get("lang") || "es",
   theme: store.get("theme") ||
@@ -251,7 +266,7 @@ const state = {
   tz: tzFor(savedLoc?.lat, savedLoc?.lon),
   selected: null,
   fixedTime: null, // { h, mi } when the person picks a time; null follows the clock
-  font: store.get("font") === "dyslexic" ? "dyslexic" : "normal",
+  font: FONTS[store.get("font")] ? store.get("font") : "normal",
   colors: (() => { // { primary, secondary } picked by the person; missing = the theme's own
     try {
       return JSON.parse(store.get("colors")) || {};
@@ -509,10 +524,7 @@ function moonSVG(fraction, waxing, size) {
 function renderStatic() {
   document.documentElement.lang = state.lang;
   document.documentElement.dataset.theme = state.theme;
-  document.documentElement.dataset.font = state.font;
-  $("fontSeg").querySelectorAll("button").forEach((b) => {
-    b.setAttribute("aria-pressed", String(b.dataset.font === state.font));
-  });
+  applyFont();
   // Keys with a "…Set" variant (azimuth, altitude, time) switch to it while a time is chosen.
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     const key = el.dataset.i18n;
@@ -530,6 +542,39 @@ function renderStatic() {
   $("todayBtn").hidden = sameDay(state.selected, todayCal());
   applyColors();
   $("cityInput").placeholder = t("cityPlaceholder");
+}
+
+// The picked font replaces both the body and the heading font.
+function applyFont() {
+  const font = FONTS[state.font];
+  const root = document.documentElement.style;
+  if (font.google && !document.querySelector(`link[data-font="${state.font}"]`)) {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?family=${font.google}&display=swap`;
+    link.dataset.font = state.font;
+    link.addEventListener("load", () => refitFont(state.font));
+    document.head.append(link);
+  }
+  if (font.name) {
+    const family = `"${font.name}", system-ui, sans-serif`;
+    root.setProperty("--font-body", family);
+    root.setProperty("--font-display", family);
+  } else {
+    root.removeProperty("--font-body");
+    root.removeProperty("--font-display");
+  }
+  $("fontSeg").querySelectorAll("button").forEach((b) => {
+    b.setAttribute("aria-pressed", String(b.dataset.font === state.font));
+  });
+  const pick = $("fontPick");
+  const more = t("fontMore");
+  if (pick.options[0]?.text !== more) { // first time, or the language changed
+    pick.replaceChildren(new Option(more, ""), ...MORE_FONTS.map((k) => new Option(FONTS[k].label || FONTS[k].name, k)));
+    pick.options[0].hidden = true;
+  }
+  pick.value = MORE_FONTS.includes(state.font) ? state.font : "";
+  pick.classList.toggle("on", Boolean(pick.value));
 }
 
 /* Picked colours override the theme's, in both light and dark. Text on the
@@ -1149,16 +1194,25 @@ $("colorReset").addEventListener("click", () => {
   applyColors();
 });
 
-$("fontSeg").addEventListener("click", (e) => {
-  const font = e.target.closest("button")?.dataset.font;
-  if (!font) return;
+// Text widths change with the font: re-fit now, and again once it has loaded.
+function refitFont(font) {
+  const refit = () => { fitPlace(); centerStrip(); };
+  refit();
+  document.fonts?.load(`600 1em "${FONTS[font].name || "Fraunces"}"`).then(refit, () => {});
+}
+
+function pickFont(font) {
   state.font = font;
   store.set("font", font);
   renderStatic();
-  // Text widths change with the font: re-fit once it has loaded.
-  const refit = () => { fitPlace(); centerStrip(); };
-  refit();
-  document.fonts?.load(`600 1em ${font === "dyslexic" ? "OpenDyslexic" : "Fraunces"}`).then(refit, () => {});
+  refitFont(font);
+}
+$("fontSeg").addEventListener("click", (e) => {
+  const font = e.target.closest("button")?.dataset.font;
+  if (font) pickFont(font);
+});
+$("fontPick").addEventListener("change", (e) => {
+  if (e.target.value) pickFont(e.target.value);
 });
 
 $("langBtn").addEventListener("click", () => {
